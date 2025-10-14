@@ -1,0 +1,14 @@
+{
+  "dart.flutterSdkPath": ".fvm/versions/3.35.6",
+  "cSpell.words": [
+    "Neumorphic"
+  ],
+   "files.exclude": {
+    ".fvm": true
+  },
+  "search.exclude": {
+    ".fvm": true
+  },
+  "git.ignoredRepositories": [".fvm/flutter_sdk"],
+  "git.autoRepositoryDetection": "subFolders"
+}
