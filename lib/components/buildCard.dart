@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/main/home.dart';
+import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 class Reminder {
   final String title;
@@ -51,9 +53,60 @@ class _BuildCardState extends State<BuildCard>
       padding: const EdgeInsets.only(top: 8.00),
       child: widget.reminders.isEmpty
           ? Center(
-              child: Text(
-                "No reminders",
-                style: TextStyle(fontSize: 18, color: AppColors.textSecondary),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Text(
+                        "No reminders",
+                        style: TextStyle(
+                          fontSize: 18,
+                          color: AppColors.textSecondary,
+                        ),
+                      ),
+                      SizedBox(width: 8),
+                      Icon(
+                        Icons.sentiment_satisfied,
+                        color: AppColors.textSecondary,
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: 12),
+                  ShadIconButton(
+                    backgroundColor: AppColors.primary,
+                    shadows: [
+                      BoxShadow(
+                        color: AppColors.primary.withValues(alpha: .4),
+                        spreadRadius: 4,
+                        blurRadius: 10,
+                        offset: const Offset(0, 2),
+                      ),
+                    ],
+                    icon: const Icon(LucideIcons.plus600, color: Colors.white),
+                    onPressed: () {
+                      // Action to add a new reminder
+                      showDialog(
+                        context: context,
+                        builder: (context) {
+                          return AlertDialog(
+                            title: Text('Add Reminder'),
+                            content: Text(
+                              'Functionality to add a new reminder goes here.',
+                            ),
+                            actions: [
+                              TextButton(
+                                onPressed: () => Navigator.of(context).pop(),
+                                child: Text('Close'),
+                              ),
+                            ],
+                          );
+                        },
+                      );
+                    },
+                  ),
+                ],
               ),
             )
           : ListView.builder(

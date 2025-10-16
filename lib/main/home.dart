@@ -1,8 +1,13 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:image_picker/image_picker.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
 import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:lmk/components/buildCard.dart';
 import 'package:lmk/components/floatActionButton.dart';
+import 'package:lmk/data/repository/post_repo.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/avatar_card.dart';
 import 'package:lmk/components/colours/colours.dart';
@@ -208,28 +213,104 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       floatingActionButtonLocation: ExpandableFab.location,
 
       floatingActionButton: ExpandableFab(
+        elevation: 10,
         type: ExpandableFabType.fan,
         initialOpen: false,
         pos: ExpandableFabPos.right,
+        fanAngle: 85,
         distance: 80,
+        margin: const EdgeInsets.only(right: 16, bottom: 16),
         openButtonBuilder: RotateFloatingActionButtonBuilder(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.background,
           child: const Icon(Icons.add),
         ),
         closeButtonBuilder: RotateFloatingActionButtonBuilder(
+          backgroundColor: AppColors.primary,
+          foregroundColor: AppColors.background,
           child: const Icon(Icons.close),
         ),
         children: [
           FloatingActionButton.small(
-            heroTag: "fab_camera",
-            onPressed: () {},
-            child: const Icon(Icons.camera_alt_outlined),
-          ),
-          FloatingActionButton.small(
+            backgroundColor: AppColors.secondary,
+            foregroundColor: AppColors.background,
+            disabledElevation: 0,
+            hoverColor: AppColors.surface,
             heroTag: "fab_photo",
-            onPressed: () {},
+            onPressed: () async {
+              // Open gallery to pick image
+              await picker("gallery");
+            },
             child: const Icon(Icons.photo),
           ),
+          FloatingActionButton.small(
+            backgroundColor: AppColors.secondary,
+            foregroundColor: AppColors.background,
+            heroTag: "fab_camera",
+            onPressed: () async {
+              // Open camera to capture image
+              await picker("camera");
+            },
+            child: const Icon(Icons.camera_alt_outlined),
+          ),
         ],
+      ),
+    );
+  }
+
+  Future<void> picker(String source) async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      // Pick an image.
+      final XFile? image = await picker.pickImage(
+        source: source == "camera" ? ImageSource.camera : ImageSource.gallery,
+      );
+
+      if (image == null) {
+        buildErrorToast(context);
+        return;
+      }
+      ;
+      final img = image.path;
+      PostRepository postrepo = PostRepository();
+      await postrepo.fetchDocData(img);
+    } catch (e) {
+      print("Error picking image: $e");
+      buildErrorToast(context, source);
+    }
+  }
+
+  void buildErrorToast(BuildContext context, [String which = '']) {
+    final theme = ShadTheme.of(context);
+    ShadToaster.of(context).show(
+      ShadToast.destructive(
+        title: Text(
+          which.isNotEmpty
+              ? 'Failed to pick from $which'
+              : 'Uh oh! Something went wrong',
+        ),
+        description: Text(
+          which.isNotEmpty
+              ? 'There was a problem accessing your $which'
+              : 'No image was selected',
+        ),
+        action: ShadButton.destructive(
+          decoration: ShadDecoration(
+            border: ShadBorder.all(
+              color: theme.colorScheme.destructiveForeground,
+              width: 1,
+            ),
+          ),
+          onPressed: which.isNotEmpty
+              ? () async {
+                  ShadToaster.of(context).hide();
+                  await picker(which);
+                }
+              : () {
+                  ShadToaster.of(context).hide();
+                },
+          child: Text(which.isNotEmpty ? 'Try again' : 'Dismiss'),
+        ),
       ),
     );
   }
