@@ -5,7 +5,7 @@ import 'package:lmk/data/repository/api/api.dart';
 
 class PostRepository {
   Api api = Api();
-  Future<void> fetchDocData(String imagePath) async {
+  Future<DocData?> fetchDocData(String imagePath) async {
     try {
       FormData formData = FormData.fromMap({
         'img': await MultipartFile.fromFile(imagePath),
@@ -16,10 +16,10 @@ class PostRepository {
         data: formData,
       );
       DocData docData = DocData.fromJson(response.data);
-
       debugPrint(docData.documentType.toString());
       debugPrint(docData.issueDate.toString());
       debugPrint(docData.expiryDate.toString());
+      return docData;
     } catch (e) {
       debugPrint(e.toString());
     }

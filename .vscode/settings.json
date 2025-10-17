@@ -1,8 +1,10 @@
 {
   "dart.flutterSdkPath": ".fvm/versions/3.35.6",
   "cSpell.words": [
+    "colours",
     "Lucide",
-    "Neumorphic"
+    "Neumorphic",
+    "shadcn"
   ],
    "files.exclude": {
     ".fvm": true

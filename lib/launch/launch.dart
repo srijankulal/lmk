@@ -33,13 +33,7 @@ class Launch extends StatelessWidget {
             icon: Icon(Icons.arrow_circle_right_rounded),
 
             onPressed: () {
-              Navigator.push(
-                context,
-                PageRouteBuilder(
-                  pageBuilder: (context, animation, secondaryAnimation) =>
-                      const Home(),
-                ),
-              );
+              Navigator.pushReplacementNamed(context, '/home');
             },
           ),
         ],

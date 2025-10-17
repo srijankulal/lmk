@@ -1,4 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:lmk/data/models/post/post.dart';
+import 'package:lmk/main/home.dart';
+import 'package:lmk/presentation/dataFrom.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'launch/launch.dart';
 
@@ -16,7 +19,13 @@ class MyApp extends StatelessWidget {
         brightness: Brightness.dark,
         colorScheme: const ShadSlateColorScheme.dark(),
       ),
-      home: const Launch(),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => const Launch(),
+        '/home': (context) => const Home(),
+        '/docForm': (context) => DocForm(),
+       
+      },
     );
   }
 }

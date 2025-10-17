@@ -1,12 +1,9 @@
-import 'dart:io';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:path_provider/path_provider.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
-import 'package:flutter_speed_dial/flutter_speed_dial.dart';
 import 'package:lmk/components/buildCard.dart';
-import 'package:lmk/components/floatActionButton.dart';
+import 'package:lmk/data/models/post/post.dart';
 import 'package:lmk/data/repository/post_repo.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/avatar_card.dart';
@@ -273,7 +270,54 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       ;
       final img = image.path;
       PostRepository postrepo = PostRepository();
-      await postrepo.fetchDocData(img);
+      final loading = SpinKitFadingCube(color: AppColors.primary, size: 25.0);
+      // Show loading dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return PopScope(
+        canPop: false,
+        child: Center(
+          child: SizedBox(
+            width: 200,
+            height: 200,
+            child: Card(
+          color: AppColors.surface,
+          child: Padding(
+            padding: const EdgeInsets.all(20.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+            loading,
+            const SizedBox(height: 16),
+            Text(
+              'Processing image...',
+              style: TextStyle(color: AppColors.textPrimary),
+              textAlign: TextAlign.center,
+            ),
+              ],
+            ),
+          ),
+            ),
+          ),
+        ),
+          );
+        },
+      );
+
+      DocData? docData = await postrepo.fetchDocData(img);
+
+      // Hide loading dialog
+      if (context.mounted) {
+        Navigator.of(context).pop();
+      }
+      if (docData == null) {
+        buildErrorToast(context);
+        return;
+      }
+      Navigator.pushNamed(context, '/docForm', arguments: docData);
     } catch (e) {
       print("Error picking image: $e");
       buildErrorToast(context, source);
