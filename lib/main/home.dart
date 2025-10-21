@@ -1,13 +1,19 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
+import 'package:lmk/auth/services/google_auth.dart';
 import 'package:lmk/components/buildCard.dart';
+import 'package:lmk/components/floatActionButton.dart';
 import 'package:lmk/data/models/post/post.dart';
 import 'package:lmk/data/repository/post_repo.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/avatar_card.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/presentation/alerts/screenAlert.dart';
+import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -16,114 +22,26 @@ class Home extends StatefulWidget {
   State<Home> createState() => _HomeState();
 }
 
-final List<Reminder> reminders = [
-  // Reminder(
-  //   title: "Car Insurance",
-  //   subtitle: "Renew before policy expires",
-  //   time: "10 Nov",
-  //   color: AppColors.secondary,
-  // ),
-  // Reminder(
-  //   title: "Emission Test",
-  //   subtitle: "Expires in 5 days",
-  //   time: "18 Oct",
-  //   color: AppColors.accent,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Car Insurance",
-  //   subtitle: "Renew before policy expires",
-  //   time: "10 Nov",
-  //   color: AppColors.secondary,
-  // ),
-  // Reminder(
-  //   title: "Emission Test",
-  //   subtitle: "Expires in 5 days",
-  //   time: "18 Oct",
-  //   color: AppColors.accent,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Emission Test",
-  //   subtitle: "Expires in 5 days",
-  //   time: "18 Oct",
-  //   color: AppColors.accent,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Emission Test",
-  //   subtitle: "Expires in 5 days",
-  //   time: "18 Oct",
-  //   color: AppColors.accent,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Emission Test",
-  //   subtitle: "Expires in 5 days",
-  //   time: "18 Oct",
-  //   color: AppColors.accent,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-  // Reminder(
-  //   title: "Health Insurance",
-  //   subtitle: "Next renewal due",
-  //   time: "01 Jan",
-  //   color: AppColors.surface,
-  // ),
-];
+// ... (keep the reminders list as is)
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
+  static final List<Color> cardColors = [
+    AppColors.cardSage,
+    AppColors.cardClay,
+    AppColors.cardAmber,
+    AppColors.cardCoral,
+  ];
   late AnimationController _controller;
   late Animation<double> _animation;
+  final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
+      FlutterLocalNotificationsPlugin();
 
   @override
   void initState() {
     super.initState();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 600),
+
       vsync: this,
     );
     _animation = CurvedAnimation(
@@ -131,12 +49,166 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       curve: Curves.easeOutBack,
     );
     _controller.forward();
+    _initNotifications();
+  }
+
+  Future<void> _initNotifications() async {
+    const androidInit = AndroidInitializationSettings('@mipmap/ic_launcher');
+    const initSettings = InitializationSettings(android: androidInit);
+    await flutterLocalNotificationsPlugin.initialize(initSettings);
   }
 
   @override
   void dispose() {
     _controller.dispose();
     super.dispose();
+  }
+
+  Future<bool> checkNotificationPermission() async {
+    final bool? granted = await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<
+          AndroidFlutterLocalNotificationsPlugin
+        >()
+        ?.requestNotificationsPermission();
+
+    return granted ?? false;
+  }
+
+  List<Reminder> reminders = [
+    //... (keep the reminders list as is)
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+    Reminder(
+      title: 'Passport Renewal',
+      expiry_date: DateTime(2024, 11, 20),
+      time: TimeOfDay(hour: 10, minute: 0),
+      color: cardColors[Random().nextInt(cardColors.length)],
+    ),
+  ];
+
+  void showPermissionDeniedToast() {
+    final theme = ShadTheme.of(context);
+    ShadToaster.of(context).show(
+      ShadToast.destructive(
+        title: const Text('Notifications disabled'),
+        description: const Text(
+          'Enable notifications in Settings to receive reminders.',
+        ),
+        action: ShadButton.destructive(
+          decoration: ShadDecoration(
+            border: ShadBorder.all(
+              color: theme.colorScheme.destructiveForeground,
+              width: 1,
+            ),
+          ),
+          onPressed: () {
+            ShadToaster.of(context).hide();
+          },
+          child: const Text('Dismiss'),
+        ),
+      ),
+    );
+  }
+
+  Future<void> scheduleReminderTest() async {
+    final hasPermission = await checkNotificationPermission();
+    if (!hasPermission) {
+      showPermissionDeniedToast();
+      return;
+    }
+
+    const androidDetails = AndroidNotificationDetails(
+      'reminder_channel',
+      'Reminders',
+      channelDescription: 'Reminder notifications',
+      importance: Importance.defaultImportance,
+      priority: Priority.defaultPriority,
+    );
+    const notificationDetails = NotificationDetails(android: androidDetails);
+
+    // Simple immediate notification to verify permission flow.
+    await flutterLocalNotificationsPlugin.show(
+      0,
+      'Notifications enabled',
+      'You will receive reminders.',
+      notificationDetails,
+    );
   }
 
   @override
@@ -146,7 +218,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       body: SafeArea(
         child: Column(
           children: [
-            // Top Section (remains the same)
+            // ... (keep the top section as is)
             ScaleTransition(
               scale: _animation,
               child: Container(
@@ -158,6 +230,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                     AvatarCard(
                       name: "John Doe",
                       imageUrl: "https://avatar.iran.liara.run/public/41",
+                      onTap: () {
+                        AuthMethods().signOut();
+                        Navigator.pushReplacementNamed(context, '/signIn');
+                      },
                     ),
                     Padding(
                       padding: const EdgeInsets.only(left: 20.0, top: 16.0),
@@ -174,22 +250,24 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 22),
+                    // ShadButton(
+                    //   backgroundColor: AppColors.primary,
+                    //   child: const Text('Add New Document'),
+                    //   onPressed: () async {
+                    //     await scheduleReminderTest();
+                    //   },
+                    // ),
                   ],
                 ),
               ),
             ),
             Expanded(
               child: Transform.translate(
-                // Move the card list up to overlap the dark header slightly
                 offset: const Offset(0, -24),
                 child: Container(
                   decoration: const BoxDecoration(
                     color: AppColors.background,
-                    borderRadius: BorderRadius.only(
-                      topLeft: Radius.circular(32),
-                      topRight: Radius.circular(32),
-                    ),
-
+                    borderRadius: BorderRadius.all(Radius.circular(32)),
                     boxShadow: [
                       BoxShadow(
                         color: Colors.black12,
@@ -202,53 +280,37 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 ),
               ),
             ),
-            // ------------------------------------------------------------------
+            const SizedBox(height: 44),
           ],
         ),
       ),
-
-      floatingActionButtonLocation: ExpandableFab.location,
-
-      floatingActionButton: ExpandableFab(
-        elevation: 10,
-        type: ExpandableFabType.fan,
-        initialOpen: false,
-        pos: ExpandableFabPos.right,
-        fanAngle: 85,
-        distance: 80,
-        margin: const EdgeInsets.only(right: 16, bottom: 16),
-        openButtonBuilder: RotateFloatingActionButtonBuilder(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.background,
-          child: const Icon(Icons.add),
-        ),
-        closeButtonBuilder: RotateFloatingActionButtonBuilder(
-          backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.background,
-          child: const Icon(Icons.close),
-        ),
-        children: [
-          FloatingActionButton.small(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: AppColors.background,
-            disabledElevation: 0,
-            hoverColor: AppColors.surface,
-            heroTag: "fab_photo",
-            onPressed: () async {
-              // Open gallery to pick image
+      floatingActionButtonLocation: FloatingActionButtonLocation.endFloat,
+      floatingActionButton: GlassExpandableFab(
+        actions: [
+          FabAction(
+            icon: Icons.photo_library_rounded,
+            // label: 'Medicine',
+            onTap: () async {
+              final hasPermission = await checkNotificationPermission();
+              if (!hasPermission) {
+                showPermissionDeniedToast();
+                return;
+              }
               await picker("gallery");
             },
-            child: const Icon(Icons.photo),
           ),
-          FloatingActionButton.small(
-            backgroundColor: AppColors.secondary,
-            foregroundColor: AppColors.background,
-            heroTag: "fab_camera",
-            onPressed: () async {
-              // Open camera to capture image
+
+          FabAction(
+            icon: Icons.camera_alt_rounded,
+            // label: 'Stats',
+            onTap: () async {
+              final hasPermission = await checkNotificationPermission();
+              if (!hasPermission) {
+                showPermissionDeniedToast();
+                return;
+              }
               await picker("camera");
             },
-            child: const Icon(Icons.camera_alt_outlined),
           ),
         ],
       ),
@@ -256,9 +318,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   }
 
   Future<void> picker(String source) async {
+    // ... (keep the rest of the picker method as is)
     try {
       final ImagePicker picker = ImagePicker();
-      // Pick an image.
       final XFile? image = await picker.pickImage(
         source: source == "camera" ? ImageSource.camera : ImageSource.gallery,
       );
@@ -267,52 +329,51 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         buildErrorToast(context);
         return;
       }
-      ;
       final img = image.path;
       PostRepository postrepo = PostRepository();
       final loading = SpinKitFadingCube(color: AppColors.primary, size: 25.0);
-      // Show loading dialog
+
       showDialog(
         context: context,
         barrierDismissible: false,
         builder: (BuildContext context) {
           return PopScope(
-        canPop: false,
-        child: Center(
-          child: SizedBox(
-            width: 200,
-            height: 200,
-            child: Card(
-          color: AppColors.surface,
-          child: Padding(
-            padding: const EdgeInsets.all(20.0),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-            loading,
-            const SizedBox(height: 16),
-            Text(
-              'Processing image...',
-              style: TextStyle(color: AppColors.textPrimary),
-              textAlign: TextAlign.center,
+            canPop: false,
+            child: Center(
+              child: SizedBox(
+                width: 200,
+                height: 200,
+                child: Card(
+                  color: AppColors.surface,
+                  child: Padding(
+                    padding: const EdgeInsets.all(20.0),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        loading,
+                        const SizedBox(height: 16),
+                        Text(
+                          'Processing image...',
+                          style: TextStyle(color: AppColors.textPrimary),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
             ),
-              ],
-            ),
-          ),
-            ),
-          ),
-        ),
           );
         },
       );
 
       DocData? docData = await postrepo.fetchDocData(img);
 
-      // Hide loading dialog
       if (context.mounted) {
         Navigator.of(context).pop();
       }
+
       if (docData == null) {
         buildErrorToast(context);
         return;
@@ -325,6 +386,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   }
 
   void buildErrorToast(BuildContext context, [String which = '']) {
+    // ... (keep as is)
     final theme = ShadTheme.of(context);
     ShadToaster.of(context).show(
       ShadToast.destructive(

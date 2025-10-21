@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "640860070869",
+    "project_id": "lmk-app-14864",
+    "storage_bucket": "lmk-app-14864.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:640860070869:android:b2059bb161b8917b74935c",
+        "android_client_info": {
+          "package_name": "com.example.lmk"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "640860070869-2mfc4kpoebpstf39834f4s7qr4ltgmd1.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBC4XZPGa7KSgHimNkdKxYZT2Cy58V-4gA"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "640860070869-2mfc4kpoebpstf39834f4s7qr4ltgmd1.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "640860070869-vsvro6va0i6h26vunkv7bv8grqb1ir9r.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.lmk"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -62,6 +62,7 @@ class _DocFormState extends State<DocForm> {
                   ),
                   const SizedBox(height: 16),
                   ShadDatePickerFormField(
+                    closeOnSelection: true,
                     id: 'Expiry Date',
                     label: const Text('Expiry Date'),
                     placeholder: const Text('Expiry Date not found'),
@@ -76,14 +77,33 @@ class _DocFormState extends State<DocForm> {
                     },
                   ),
                   ShadButton(
-                    child: const Text('Submit'),
+                    child: const Text('Next'),
                     onPressed: () {
                       if (formKey.currentState!.saveAndValidate()) {
+                        Navigator.pushNamed(
+                          context,
+                          '/setReminder',
+                          arguments: DocData(
+                            documentType: _titleController.text,
+                            issueDate:
+                                formKey.currentState!.value['Issue Date'],
+                            expiryDate:
+                                formKey.currentState!.value['Expiry Date'],
+                          ),
+                        );
                         print(
                           'validation succeeded with ${formKey.currentState!.value}',
                         );
                       } else {
                         print('validation failed');
+                        ShadToaster.of(context).show(
+                          ShadToast.destructive(
+                            title: const Text('Validation Failed'),
+                            description: const Text(
+                              'Please correct the errors.',
+                            ),
+                          ),
+                        );
                       }
                     },
                   ),

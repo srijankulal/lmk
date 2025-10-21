@@ -31,6 +31,36 @@ class AppColors {
   static const Color shadow = Color(0x1A000000);
   static const Color disabled = Color(0xFF9C9C9C);
 
+  // 🌿 Card Colors — matches warm beige & dark green-gray
+  static const Color cardMoss = Color(
+    0xFF616C5F,
+  ); // muted moss green — subtle and rich
+  static const Color cardSage = Color(0xFF8FA58A); // soft natural green tone
+  static const Color cardClay = Color(0xFFE0CBB2); // light earthy beige
+  static const Color cardDrift = Color(
+    0xFFDAD6C8,
+  ); // calm neutral (already used for surface)
+  static const Color cardMist = Color(
+    0xFFECE8DA,
+  ); // pale warm tint for lighter cards
+  static const Color cardAmber = Color(
+    0xFFFFB77A,
+  ); // warm, friendly orange tone
+  static const Color cardCoral = Color(
+    0xFFFF8B66,
+  ); // brighter variant of your primary
+  // 🖋 Card Content Colors
+  static const Color cardTextDark = Color(0xFF1E1E1E); // for light cards
+  static const Color cardTextLight = Color(0xFFFFFFFF); // for dark cards
+  static const Color cardSubtitleLight = Color(
+    0xFF5E5E5E,
+  ); // subtle gray for light cards
+  static const Color cardSubtitleDark = Color(
+    0xFFE0E0E0,
+  ); // soft gray for dark cards
+  static const Color cardPillDark = Color(0xFF2E2E2E); // pill on light cards
+  static const Color cardPillLight = Color(0xFFECECEC); // pill on dark cards
+
   // 🌈 Gradient backgrounds
   static const LinearGradient headerGradient = LinearGradient(
     colors: [Color(0xFF475242), Color(0xFF3B433A)],
