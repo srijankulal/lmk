@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
@@ -12,15 +13,18 @@ class Reminder {
   final String title;
   final TimeOfDay time;
   final DateTime expiry_date;
-  final Color color;
+  // final Color color;
   final DateTime issue_date;
+  // final bool isEnabled;
 
   Reminder({
     required this.title,
     required this.time,
     required this.expiry_date,
-    required this.color,
+    // required this.color,
     DateTime? issue_date,
+
+    // required this.isEnabled,
   }) : issue_date = issue_date ?? DateTime(0, 0, 0);
 }
 
@@ -130,6 +134,12 @@ class _NeumorphicReminderCard extends StatefulWidget {
 }
 
 class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
+  static final List<Color> cardColors = [
+    AppColors.cardSage,
+    AppColors.cardClay,
+    AppColors.cardAmber,
+    AppColors.cardCoral,
+  ];
   bool _isPressed = false;
 
   @override
@@ -256,7 +266,7 @@ class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
               style: NeumorphicStyle(
                 depth: _isPressed ? -4 : 6,
                 intensity: _isPressed ? 0.9 : 0,
-                color: widget.reminder.color,
+                color: cardColors[Random().nextInt(cardColors.length)],
                 boxShape: NeumorphicBoxShape.roundRect(
                   BorderRadius.circular(20),
                 ),
@@ -269,27 +279,31 @@ class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   // Texts
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        widget.reminder.title,
-                        style: const TextStyle(
-                          color: AppColors.textPrimary,
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          widget.reminder.title,
+                          style: const TextStyle(
+                            color: AppColors.textPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.bold,
+                          ),
+                          overflow: TextOverflow.ellipsis,
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        "Expiry: ${widget.reminder.expiry_date.toLocal().toString().split(' ')[0]}",
-                        style: const TextStyle(
-                          color: AppColors.textSecondary,
-                          fontSize: 14,
+                        const SizedBox(height: 4),
+                        Text(
+                          "Expiry: ${widget.reminder.expiry_date.toLocal().toString().split(' ')[0]}",
+                          style: const TextStyle(
+                            color: AppColors.textSecondary,
+                            fontSize: 14,
+                          ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
 
                   // Time pill
                   Neumorphic(

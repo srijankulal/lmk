@@ -9,12 +9,14 @@ import 'package:lmk/auth/services/google_auth.dart';
 import 'package:lmk/components/buildCard.dart';
 import 'package:lmk/components/floatActionButton.dart';
 import 'package:lmk/data/models/post/post.dart';
+import 'package:lmk/data/repository/get_reminders.dart';
 import 'package:lmk/data/repository/post_repo.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/avatar_card.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/presentation/alerts/screenAlert.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:lmk/data/models/reminders.dart' as reminders_model;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -26,23 +28,19 @@ class Home extends StatefulWidget {
 // ... (keep the reminders list as is)
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
-  static final List<Color> cardColors = [
-    AppColors.cardSage,
-    AppColors.cardClay,
-    AppColors.cardAmber,
-    AppColors.cardCoral,
-  ];
   late AnimationController _controller;
   late Animation<double> _animation;
   final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
       FlutterLocalNotificationsPlugin();
+  List<Reminder> reminders = [];
+  String? token;
 
   @override
   void initState() {
     super.initState();
+    _initToken();
     _controller = AnimationController(
       duration: const Duration(milliseconds: 600),
-
       vsync: this,
     );
     _animation = CurvedAnimation(
@@ -51,6 +49,43 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     );
     _controller.forward();
     _initNotifications();
+  }
+
+  Future<void> _initToken() async {
+    token = await FirebaseAuth.instance.currentUser?.getIdToken();
+    await _loadReminders();
+  }
+
+  Future<void> _loadReminders() async {
+    print("Fetching reminders with token: $token");
+    if (token != null) {
+      final fetchedReminders = await GetReminders().fetchReminders(
+        token!,
+        FirebaseAuth.instance.currentUser!.uid,
+      );
+      if (mounted) {
+        setState(() {
+          // Convert ReminderModel objects to Reminder objects
+          reminders = (fetchedReminders.reminders ?? [])
+              .map(
+                (reminderModel) => Reminder(
+                  title: reminderModel.title as String,
+                  expiry_date: reminderModel.expiryDate as DateTime,
+                  time: _parseTimeOfDay(reminderModel.time as String),
+                  // isEnabled: reminderModel.isEnabled as bool,
+                ),
+              )
+              .toList();
+          print(reminders[0].time);
+        });
+        print(reminders[0].time);
+      }
+    }
+  }
+
+  TimeOfDay _parseTimeOfDay(String time) {
+    final parts = time.split(':');
+    return TimeOfDay(hour: int.parse(parts[0]), minute: int.parse(parts[1]));
   }
 
   Future<void> _initNotifications() async {
@@ -75,93 +110,93 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     return granted ?? false;
   }
 
-  List<Reminder> reminders = [
-    //... (keep the reminders list as is)
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-    Reminder(
-      title: 'Passport Renewal',
-      expiry_date: DateTime(2024, 11, 20),
-      time: TimeOfDay(hour: 10, minute: 0),
-      color: cardColors[Random().nextInt(cardColors.length)],
-    ),
-  ];
+  // List<Reminder> reminders = [
+  //   // //... (keep the reminders list as is)
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  //   // Reminder(
+  //   //   title: 'Passport Renewal',
+  //   //   expiry_date: DateTime(2024, 11, 20),
+  //   //   time: TimeOfDay(hour: 10, minute: 0),
+  //   //   color: cardColors[Random().nextInt(cardColors.length)],
+  //   // ),
+  // ];
 
   void showPermissionDeniedToast() {
     final theme = ShadTheme.of(context);
@@ -225,7 +260,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       // Return a loading indicator or an empty container while navigating.
       return const Scaffold(
         backgroundColor: AppColors.background,
-        body: Center(child: SpinKitFadingCube(color: AppColors.primary, size: 25.0)),
+        body: Center(
+          child: SpinKitFadingCube(color: AppColors.primary, size: 25.0),
+        ),
       );
     } else {
       name = user.displayName ?? "User";

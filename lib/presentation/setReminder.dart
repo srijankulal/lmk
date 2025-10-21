@@ -1,7 +1,9 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/models/post/post.dart';
+import 'package:lmk/data/repository/create_reminder.dart';
 import 'package:lmk/main.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -118,8 +120,9 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                         );
 
                         // Simple immediate notification to verify permission flow.
+                        final notificationId = args.documentType.hashCode.abs();
                         await flutterLocalNotificationsPlugin.zonedSchedule(
-                          0,
+                          notificationId,
                           'Reminder for ${args.documentType}',
                           'This is your reminder!',
                           tz.TZDateTime.from(
@@ -140,8 +143,55 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                           'validation succeeded with ${formKey.currentState!.value}',
                         );
                         if (mounted) {
-                          
-                          Navigator.of(context).pop();
+                          final user = FirebaseAuth.instance.currentUser;
+                          final uid = user != null ? user.uid : '';
+                          final String? idTokenFirebase = await user
+                              ?.getIdToken();
+                          // Call API to create reminder
+                          final reminderRepository = CreateReminderRepository();
+                          try {
+                            await reminderRepository.createReminder(
+                              token: idTokenFirebase ?? '',
+                              uid: uid,
+                              title: 'Reminder for ${args.documentType}',
+                              time:
+                                  '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+                              expiryDate: args.expiryDate as DateTime,
+                              setDate: DateTime(
+                                selectedDate.year,
+                                selectedDate.month,
+                                selectedDate.day,
+                                selectedTime.hour,
+                                selectedTime.minute,
+                              ),
+                              isEnabled: true,
+                              index: notificationId,
+                            );
+                          } catch (e) {
+                            print('Failed to save reminder to API: $e');
+                            if (mounted) {
+                              ShadToaster.of(context).show(
+                                ShadToast(
+                                  title: Text('Failed to save reminder: $e'),
+                                  backgroundColor: Colors.orange,
+                                  duration: Duration(seconds: 2),
+                                  action: ShadButton(
+                                    child: Text('OK'),
+                                    onPressed: () =>
+                                        ShadToaster.of(context).hide(),
+                                  ),
+                                ),
+                              );
+                            }
+                          }
+                          ShadToaster.of(context).show(
+                            ShadToast(
+                              title: const Text('Reminder set successfully!'),
+                              backgroundColor: Colors.green,
+                              duration: const Duration(seconds: 2),
+                            ),
+                          );
+                          Navigator.pushNamed(context, '/home');
                         }
                       } else {
                         print('validation failed');
