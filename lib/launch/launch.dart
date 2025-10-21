@@ -1,3 +1,4 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../main/home.dart';
 
@@ -33,6 +34,11 @@ class Launch extends StatelessWidget {
             icon: Icon(Icons.arrow_circle_right_rounded),
 
             onPressed: () {
+              FirebaseAuth.instance.currentUser;
+              if (FirebaseAuth.instance.currentUser == null) {
+                Navigator.pushReplacementNamed(context, '/signIn');
+                return;
+              }
               Navigator.pushReplacementNamed(context, '/home');
             },
           ),

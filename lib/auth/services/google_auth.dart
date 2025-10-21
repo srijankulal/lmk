@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lmk/launch/launch.dart';
+import 'package:lmk/data/repository/userRegister.dart';
 
 class AuthMethods {
   final FirebaseAuth auth = FirebaseAuth.instance;
@@ -81,13 +82,32 @@ class AuthMethods {
       final User? user = userCredential.user;
 
       if (user != null) {
+        // This is a new user registration flow.
+        // For existing users, this might be redundant.
+        // You might want to check if the user is new.
+        // final bool isNewUser = userCredential.additionalUserInfo?.isNewUser ?? false;
+        // if (isNewUser) {
         final userDetails = {
-          "Name": user.displayName,
-          "Email": user.email,
-          "Id": user.uid,
-          "Image": user.photoURL ?? "<some default url>",
+          "name": user.displayName ?? "No Name",
+          "email": user.email,
+          "uid": user.uid,
+          "profileUrl": user.photoURL ?? "",
         };
-        print("User details: $userDetails");
+        print("User details for registration: $userDetails");
+
+        final String? idTokenFirebase = await user.getIdToken();
+        if (idTokenFirebase != null) {
+          try {
+        // Call your backend API to register the user in your database
+        await UserRegister().registerUser(idTokenFirebase, userDetails);
+        print("User registered on backend successfully.");
+          } catch (e) {
+        // Handle potential errors from your backend, e.g., user already exists
+        print("Error registering user on backend: $e");
+        // You might not want to throw an error here if user already existing
+        // is not considered a sign-in failure.
+          }
+        }
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Launch()),
@@ -107,6 +127,5 @@ class AuthMethods {
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await auth.signOut();
-    
   }
 }

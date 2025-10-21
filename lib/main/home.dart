@@ -1,5 +1,6 @@
 import 'dart:math';
 
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
@@ -213,6 +214,23 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    String name = "User";
+    String photoUrl = "";
+
+    if (user == null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        Navigator.pushReplacementNamed(context, '/signIn');
+      });
+      // Return a loading indicator or an empty container while navigating.
+      return const Scaffold(
+        backgroundColor: AppColors.background,
+        body: Center(child: SpinKitFadingCube(color: AppColors.primary, size: 25.0)),
+      );
+    } else {
+      name = user.displayName ?? "User";
+      photoUrl = user.photoURL ?? "";
+    }
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -228,8 +246,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   children: [
                     const SizedBox(height: 22),
                     AvatarCard(
-                      name: "John Doe",
-                      imageUrl: "https://avatar.iran.liara.run/public/41",
+                      name: name,
+                      imageUrl: photoUrl,
                       onTap: () {
                         AuthMethods().signOut();
                         Navigator.pushReplacementNamed(context, '/signIn');

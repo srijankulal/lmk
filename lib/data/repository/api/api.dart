@@ -5,7 +5,8 @@ class Api {
   Dio _dio = Dio();
 
   Api() {
-    _dio.options.baseUrl = "https://lmk-api.vercel.app";
+    // _dio.options.baseUrl = "https://lmk-api.vercel.app";
+    _dio.options.baseUrl = "https://8f6717118ebc.ngrok-free.app";
     _dio.interceptors.add(PrettyDioLogger());
   }
 
