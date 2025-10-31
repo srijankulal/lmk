@@ -166,7 +166,9 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                               ),
                               isEnabled: true,
                               index: notificationId,
+                              issuedDate: args.issueDate ?? DateTime.now(),
                             );
+                            print(reminderRepository);
                           } catch (e) {
                             print('Failed to save reminder to API: $e');
                             if (mounted) {

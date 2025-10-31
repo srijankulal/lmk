@@ -1,3 +1,4 @@
+import 'dart:ffi';
 import 'dart:math';
 import 'dart:ui';
 
@@ -13,6 +14,8 @@ class Reminder {
   final String title;
   final TimeOfDay time;
   final DateTime expiry_date;
+  final int index;
+  final bool isEnabled;
   // final Color color;
   final DateTime issue_date;
   // final bool isEnabled;
@@ -21,6 +24,8 @@ class Reminder {
     required this.title,
     required this.time,
     required this.expiry_date,
+    required this.index,
+    required this.isEnabled,
     // required this.color,
     DateTime? issue_date,
 

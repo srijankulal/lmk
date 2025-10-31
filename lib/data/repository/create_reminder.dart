@@ -14,6 +14,7 @@ class CreateReminderRepository {
     required bool isEnabled,
     required int index,
     required String token,
+    required DateTime issuedDate,
   }) async {
     try {
       final response = await api.sendRequest.post(
@@ -26,6 +27,7 @@ class CreateReminderRepository {
           'setDate': setDate.toIso8601String(),
           'isEnabled': isEnabled,
           'index': index,
+          'issuedDate': issuedDate.toIso8601String(),
         },
         options: Options(
           headers: {

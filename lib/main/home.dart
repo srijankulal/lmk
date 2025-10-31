@@ -72,7 +72,9 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                   title: reminderModel.title as String,
                   expiry_date: reminderModel.expiryDate as DateTime,
                   time: _parseTimeOfDay(reminderModel.time as String),
-                  // isEnabled: reminderModel.isEnabled as bool,
+                  index: reminderModel.index as int,
+                  isEnabled: reminderModel.isEnabled as bool,
+                  issue_date: reminderModel.issuedDate as DateTime,
                 ),
               )
               .toList();

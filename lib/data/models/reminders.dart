@@ -36,6 +36,7 @@ class ReminderModel {
   String? title;
   String? time;
   DateTime? expiryDate;
+  DateTime? issuedDate;
   DateTime? setDate;
   bool? isEnabled;
   String? user;
@@ -50,6 +51,7 @@ class ReminderModel {
     this.title,
     this.time,
     this.expiryDate,
+    this.issuedDate,
     this.setDate,
     this.isEnabled,
     this.user,
@@ -59,20 +61,27 @@ class ReminderModel {
   });
 
   factory ReminderModel.fromJson(Map<String, dynamic> json) => ReminderModel(
-    // id: json["_id"],
-    // uid: json["uid"],
-    // index: json["index"],
+    id: json["_id"],
+    uid: json["uid"],
+    index: json["index"],
     title: json["title"],
     time: json["time"],
     expiryDate: json["expiryDate"] == null
         ? null
         : DateTime.parse(json["expiryDate"]),
-    // setDate: json["setDate"] == null ? null : DateTime.parse(json["setDate"]),
-    // isEnabled: json["isEnabled"],
-    // user: json["user"],
-    // createdAt: json["createdAt"] == null ? null : DateTime.parse(json["createdAt"]),
-    // updatedAt: json["updatedAt"] == null ? null : DateTime.parse(json["updatedAt"]),
-    // v: json["__v"],
+    issuedDate: json["issuedDate"] == null
+        ? null
+        : DateTime.parse(json["issuedDate"]),
+    setDate: json["setDate"] == null ? null : DateTime.parse(json["setDate"]),
+    isEnabled: json["isEnabled"],
+    user: json["user"],
+    createdAt: json["createdAt"] == null
+        ? null
+        : DateTime.parse(json["createdAt"]),
+    updatedAt: json["updatedAt"] == null
+        ? null
+        : DateTime.parse(json["updatedAt"]),
+    v: json["__v"],
   );
 
   Map<String, dynamic> toJson() => {
@@ -82,6 +91,7 @@ class ReminderModel {
     "title": title,
     "time": time,
     "expiryDate": expiryDate?.toIso8601String(),
+    "issuedDate": issuedDate?.toIso8601String(),
     "setDate": setDate?.toIso8601String(),
     "isEnabled": isEnabled,
     "user": user,

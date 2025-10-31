@@ -13,5 +13,6 @@
     ".fvm": true
   },
   "git.ignoredRepositories": [".fvm/flutter_sdk"],
-  "git.autoRepositoryDetection": "subFolders"
+  "git.autoRepositoryDetection": "subFolders",
+  "java.configuration.updateBuildConfiguration": "interactive"
 }
