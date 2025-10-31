@@ -6,13 +6,16 @@
     "Neumorphic",
     "shadcn"
   ],
-   "files.exclude": {
+  "files.exclude": {
     ".fvm": true
   },
   "search.exclude": {
     ".fvm": true
   },
-  "git.ignoredRepositories": [".fvm/flutter_sdk"],
+  "git.ignoredRepositories": [
+    ".fvm/flutter_sdk"
+  ],
   "git.autoRepositoryDetection": "subFolders",
-  "java.configuration.updateBuildConfiguration": "interactive"
+  "java.configuration.updateBuildConfiguration": "interactive",
+
 }
