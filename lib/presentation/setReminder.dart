@@ -101,6 +101,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                         'selected date: ${formKey.currentState!.fields['Reminder Date']!.value}',
                       );
                       print('selected time: $_selectedTime');
+                      final notificationId = args.documentType.hashCode.abs();
                       if (formKey.currentState!.saveAndValidate() &&
                           _selectedTime != null) {
                         final selectedTime = _selectedTime!;
@@ -108,19 +109,26 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                             .currentState!
                             .fields['Reminder Date']!
                             .value;
-                        const androidDetails = AndroidNotificationDetails(
-                          'reminder_channel',
+                        final androidDetails = AndroidNotificationDetails(
+                          'reminder_channel $notificationId',
                           'Reminders',
                           channelDescription: 'Reminder notifications',
-                          importance: Importance.defaultImportance,
-                          priority: Priority.defaultPriority,
+                          importance: Importance.max,
+                          playSound: true,
+                          sound: RawResourceAndroidNotificationSound(
+                            'notification',
+                          ),
+                          priority: Priority.high,
+                          enableVibration: true,
+                          // fullScreenIntent: true,
+                          category: AndroidNotificationCategory.event,
                         );
-                        const notificationDetails = NotificationDetails(
+                        final notificationDetails = NotificationDetails(
                           android: androidDetails,
                         );
 
                         // Simple immediate notification to verify permission flow.
-                        final notificationId = args.documentType.hashCode.abs();
+
                         await flutterLocalNotificationsPlugin.zonedSchedule(
                           notificationId,
                           'Reminder for ${args.documentType}',
@@ -136,6 +144,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                             tz.local,
                           ),
                           notificationDetails,
+                          payload: '${args.documentType}|${args.expiryDate}',
                           androidScheduleMode:
                               AndroidScheduleMode.exactAllowWhileIdle,
                         );

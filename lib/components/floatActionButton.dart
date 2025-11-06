@@ -67,145 +67,139 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
     final safeBottom = media.padding.bottom;
 
     // Wrap the whole fab area with a container that provides a subtle outer shadow.
-    return Container(
-      // keep transparent background so BackdropFilter still blurs content behind
-      decoration: BoxDecoration(
-        color: Colors.transparent,
-        // subtle layered shadows to give the whole widget a light lift
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.12),
-            blurRadius: 18,
-            spreadRadius: -4,
-            offset: const Offset(0, 10),
+    return SizedBox(
+      width: media.size.width,
+      height: 100 + safeBottom,
+      child: Stack(
+        alignment: Alignment.bottomRight,
+        children: [
+          // Tap outside to close
+          Positioned.fill(
+            child: IgnorePointer(
+              ignoring: !_open,
+              child: AnimatedOpacity(
+                duration: widget.duration,
+                opacity: _open ? 1 : 0,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: _toggle,
+                ),
+              ),
+            ),
           ),
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 6,
-            spreadRadius: -2,
-            offset: const Offset(0, 3),
+
+          // Glass pill bar (expands from right)
+          Padding(
+            padding: EdgeInsets.only(
+              right: (safeRight > 0 ? safeRight : 16) + 72, // space for FAB
+              bottom: (safeBottom > 0 ? safeBottom : 16),
+            ),
+            child: AnimatedBuilder(
+              animation: _expand,
+              builder: (context, _) {
+                final t = _expand.value;
+                // Wider for bigger buttons + more spacing
+                final targetWidth = (widget.actions.length * 90.0) + 40.0;
+                final width = targetWidth * t;
+
+                return IgnorePointer(
+                  ignoring: t < 0.95,
+                  child: Opacity(
+                    opacity: t,
+                    child: _LiquidGlassPill(
+                      child: SizedBox(
+                        width: width,
+                        height: 68, // taller pill for bigger buttons
+                        child:
+                            t <
+                                0.95 // Only show buttons when pill is 85% expanded
+                            ? const SizedBox.shrink()
+                            : Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16.0,
+                                ), // more padding
+                                child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceEvenly,
+                                  children: widget.actions.asMap().entries.map((
+                                    entry,
+                                  ) {
+                                    final isLast =
+                                        entry.key == widget.actions.length - 1;
+                                    return Padding(
+                                      padding: EdgeInsets.only(
+                                        right: isLast ? 0 : 12.0,
+                                      ), // spacing between buttons
+                                      child: _GlassIconButton(
+                                        icon: entry.value.icon,
+                                        onTap: () {
+                                          if (_open) _toggle();
+                                          entry.value.onTap();
+                                        },
+                                      ),
+                                    );
+                                  }).toList(),
+                                ),
+                              ),
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+
+          // Main circular FAB (bigger and perfectly circular)
+          Padding(
+            padding: EdgeInsets.only(
+              right: safeRight > 0 ? safeRight : 16,
+              bottom: safeBottom > 0 ? safeBottom : 16,
+            ),
+            child: Material(
+              color: widget.mainColor,
+              elevation: 6,
+              shadowColor: Colors.black.withAlpha(30),
+              shape: const CircleBorder(),
+              child: InkWell(
+                onTap: _toggle,
+                customBorder: const CircleBorder(),
+                child: Container(
+                  decoration: BoxDecoration(
+                    color: Colors.transparent,
+                    // subtle layered shadows to give the whole widget a light lift
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.12),
+                        blurRadius: 18,
+                        spreadRadius: -4,
+                        offset: const Offset(0, 10),
+                      ),
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.04),
+                        blurRadius: 6,
+                        spreadRadius: -2,
+                        offset: const Offset(0, 3),
+                      ),
+                    ],
+                  ),
+                  width: 64, // bigger circular button
+                  height: 64,
+                  alignment: Alignment.center,
+                  child: AnimatedRotation(
+                    turns: _open ? 0.125 : 0.0,
+                    duration: widget.duration,
+                    curve: Curves.easeOutCubic,
+                    child: const Icon(
+                      Icons.add_rounded,
+                      size: 28,
+                      color: Colors.black,
+                    ),
+                  ),
+                ),
+              ),
+            ),
           ),
         ],
-      ),
-      child: SizedBox(
-        width: media.size.width,
-        height: 100 + safeBottom,
-        child: Stack(
-          alignment: Alignment.bottomRight,
-          children: [
-            // Tap outside to close
-            Positioned.fill(
-              child: IgnorePointer(
-                ignoring: !_open,
-                child: AnimatedOpacity(
-                  duration: widget.duration,
-                  opacity: _open ? 1 : 0,
-                  child: GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: _toggle,
-                  ),
-                ),
-              ),
-            ),
-
-            // Glass pill bar (expands from right)
-            Padding(
-              padding: EdgeInsets.only(
-                right: (safeRight > 0 ? safeRight : 16) + 72, // space for FAB
-                bottom: (safeBottom > 0 ? safeBottom : 16),
-              ),
-              child: AnimatedBuilder(
-                animation: _expand,
-                builder: (context, _) {
-                  final t = _expand.value;
-                  // Wider for bigger buttons + more spacing
-                  final targetWidth = (widget.actions.length * 90.0) + 40.0;
-                  final width = targetWidth * t;
-
-                  return IgnorePointer(
-                    ignoring: t < 0.95,
-                    child: Opacity(
-                      opacity: t,
-                      child: _LiquidGlassPill(
-                        child: SizedBox(
-                          width: width,
-                          height: 68, // taller pill for bigger buttons
-                          child:
-                              t <
-                                  0.95 // Only show buttons when pill is 85% expanded
-                              ? const SizedBox.shrink()
-                              : Padding(
-                                  padding: const EdgeInsets.symmetric(
-                                    horizontal: 16.0,
-                                  ), // more padding
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceEvenly,
-                                    children: widget.actions
-                                        .asMap()
-                                        .entries
-                                        .map((entry) {
-                                          final isLast =
-                                              entry.key ==
-                                              widget.actions.length - 1;
-                                          return Padding(
-                                            padding: EdgeInsets.only(
-                                              right: isLast ? 0 : 12.0,
-                                            ), // spacing between buttons
-                                            child: _GlassIconButton(
-                                              icon: entry.value.icon,
-                                              onTap: () {
-                                                if (_open) _toggle();
-                                                entry.value.onTap();
-                                              },
-                                            ),
-                                          );
-                                        })
-                                        .toList(),
-                                  ),
-                                ),
-                        ),
-                      ),
-                    ),
-                  );
-                },
-              ),
-            ),
-
-            // Main circular FAB (bigger and perfectly circular)
-            Padding(
-              padding: EdgeInsets.only(
-                right: safeRight > 0 ? safeRight : 16,
-                bottom: safeBottom > 0 ? safeBottom : 16,
-              ),
-              child: Material(
-                color: widget.mainColor,
-                elevation: 6,
-                shadowColor: Colors.black.withAlpha(30),
-                shape: const CircleBorder(),
-                child: InkWell(
-                  onTap: _toggle,
-                  customBorder: const CircleBorder(),
-                  child: Container(
-                    width: 64, // bigger circular button
-                    height: 64,
-                    alignment: Alignment.center,
-                    child: AnimatedRotation(
-                      turns: _open ? 0.125 : 0.0,
-                      duration: widget.duration,
-                      curve: Curves.easeOutCubic,
-                      child: const Icon(
-                        Icons.add_rounded,
-                        size: 28,
-                        color: Colors.black,
-                      ),
-                    ),
-                  ),
-                ),
-              ),
-            ),
-          ],
-        ),
       ),
     );
   }
@@ -228,9 +222,9 @@ class _LiquidGlassPill extends StatelessWidget {
             gradient: LinearGradient(
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [Colors.white.withAlpha(25), Colors.white.withAlpha(8)],
+              colors: [Colors.white.withAlpha(75), Colors.white.withAlpha(8)],
             ),
-            border: Border.all(color: Colors.white.withAlpha(20), width: 1.2),
+            border: Border.all(color: Colors.white.withAlpha(100), width: 1.2),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withAlpha(15),

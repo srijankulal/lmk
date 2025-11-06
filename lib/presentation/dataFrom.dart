@@ -1,6 +1,9 @@
+import 'dart:math' as math;
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lmk/data/models/post/post.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:lmk/components/colours/colours.dart';
 
 class DocForm extends StatefulWidget {
   const DocForm({super.key});
@@ -11,6 +14,22 @@ class DocForm extends StatefulWidget {
 
 class _DocFormState extends State<DocForm> {
   final _titleController = TextEditingController();
+  final _formKey = GlobalKey<ShadFormState>();
+
+  DocData? _args;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_args == null) {
+      _args = ModalRoute.of(context)!.settings.arguments as DocData;
+      final docTitle = _args?.documentType ?? '';
+      if (docTitle.isNotEmpty) {
+        _titleController.text = docTitle;
+      }
+    }
+  }
+
   @override
   void dispose() {
     _titleController.dispose();
@@ -19,100 +38,589 @@ class _DocFormState extends State<DocForm> {
 
   @override
   Widget build(BuildContext context) {
-    final args = ModalRoute.of(context)!.settings.arguments as DocData;
-    final formKey = GlobalKey<ShadFormState>();
-    _titleController.text = args.documentType ?? '';
     return Scaffold(
-      body: Center(
-        child: ShadForm(
-          key: formKey,
-          child: SingleChildScrollView(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  ShadInputFormField(
-                    id: 'Document Title',
-                    label: const Text('Document Title'),
-                    placeholder: const Text('Enter Document Title'),
-                    controller: _titleController,
-                    maxLines: 1,
-                    leading: Padding(
-                      padding: EdgeInsets.all(4.0),
-                      child: const Icon(LucideIcons.file),
-                    ),
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Document Title is required';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 16),
-                  ShadDatePickerFormField(
-                    id: 'Issue Date',
-                    label: const Text('Issue Date'),
-                    enabled: false,
-                    placeholder: const Text('Issueid Date not found'),
-                    initialValue: args.issueDate != null
-                        ? DateTime.parse('${args.issueDate}Z')
-                        : null,
-                  ),
-                  const SizedBox(height: 16),
-                  ShadDatePickerFormField(
-                    closeOnSelection: true,
-                    id: 'Expiry Date',
-                    label: const Text('Expiry Date'),
-                    placeholder: const Text('Expiry Date not found'),
-                    initialValue: args.expiryDate != null
-                        ? DateTime.parse('${args.expiryDate}Z')
-                        : null,
-                    validator: (value) {
-                      if (value == null) {
-                        return 'Expiry Date is required, select a valid date';
-                      }
-                      return null;
-                    },
-                  ),
-                  ShadButton(
-                    child: const Text('Next'),
-                    onPressed: () {
-                      if (formKey.currentState!.saveAndValidate()) {
-                        Navigator.pushNamed(
-                          context,
-                          '/setReminder',
-                          arguments: DocData(
-                            documentType: _titleController.text,
-                            issueDate:
-                                formKey.currentState!.value['Issue Date'],
-                            expiryDate:
-                                formKey.currentState!.value['Expiry Date'],
+      extendBodyBehindAppBar: true,
+      appBar: AppBar(
+        title: const Text('Document details'),
+        backgroundColor: AppColors.surfaceDark.withOpacity(0.15),
+        elevation: 0,
+        foregroundColor: AppColors.textPrimary,
+        flexibleSpace: ClipRect(
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: const SizedBox.expand(),
+          ),
+        ),
+        surfaceTintColor: Colors.transparent,
+      ),
+      body: Stack(
+        children: [
+          const _LiquidBackground(),
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 640),
+                child: ShadForm(
+                  key: _formKey,
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.fromLTRB(16, 24, 16, 16),
+                    child: GlassCard(
+                      padding: const EdgeInsets.all(18),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Row(
+                            children: [
+                              const Icon(
+                                LucideIcons.layers,
+                                size: 18,
+                                color: AppColors.primary,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Basic info',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ],
                           ),
-                        );
-                        print(
-                          'validation succeeded with ${formKey.currentState!.value}',
-                        );
-                      } else {
-                        print('validation failed');
-                        ShadToaster.of(context).show(
-                          ShadToast.destructive(
-                            title: const Text('Validation Failed'),
-                            description: const Text(
-                              'Please correct the errors.',
+                          const SizedBox(height: 12),
+                          ShadInputFormField(
+                            id: 'Document Title',
+                            label: const Text('Document title'),
+                            placeholder: const Text('Enter document title'),
+                            controller: _titleController,
+                            textCapitalization: TextCapitalization.words,
+                            maxLines: 1,
+                            maxLength: 64,
+                            leading: const Padding(
+                              padding: EdgeInsets.all(4.0),
+                              child: Icon(
+                                LucideIcons.file,
+                                color: AppColors.primary,
+                              ),
                             ),
+                            validator: (value) {
+                              if (value == null || value.trim().isEmpty) {
+                                return 'Document title is required';
+                              }
+                              return null;
+                            },
                           ),
-                        );
-                      }
-                    },
+                          const SizedBox(height: 6),
+                          Text(
+                            'This name helps you recognize the document later.',
+                            style: Theme.of(context).textTheme.bodySmall
+                                ?.copyWith(color: AppColors.textSecondary),
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            children: [
+                              const Icon(
+                                LucideIcons.calendar,
+                                size: 18,
+                                color: AppColors.accent,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                'Dates',
+                                style: Theme.of(context).textTheme.titleMedium
+                                    ?.copyWith(
+                                      color: AppColors.textPrimary,
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          ShadDatePickerFormField(
+                            id: 'Issue Date',
+                            label: const Text('Issue date'),
+                            enabled: false,
+                            placeholder: const Text('Issue date not found'),
+                            initialValue: _args?.issueDate != null
+                                ? DateTime.parse('${_args!.issueDate}Z')
+                                : null,
+                          ),
+                          const SizedBox(height: 16),
+                          ShadDatePickerFormField(
+                            closeOnSelection: true,
+                            id: 'Expiry Date',
+                            label: const Text('Expiry date'),
+                            placeholder: const Text('Select expiry date'),
+                            initialValue: _args?.expiryDate != null
+                                ? DateTime.parse('${_args!.expiryDate}Z')
+                                : null,
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Expiry date is required. Select a valid date.';
+                              }
+                              return null;
+                            },
+                          ),
+                          const SizedBox(height: 24),
+                          Row(
+                            children: [
+                              TextButton(
+                                style: TextButton.styleFrom(
+                                  foregroundColor: AppColors.textSecondary,
+                                ),
+                                onPressed: () => Navigator.maybePop(context),
+                                child: const Text('Cancel'),
+                              ),
+                              const Spacer(),
+                              ShadButton(
+                                child: const Text('Next'),
+                                onPressed: () {
+                                  if (_formKey.currentState!
+                                      .saveAndValidate()) {
+                                    Navigator.pushNamed(
+                                      context,
+                                      '/setReminder',
+                                      arguments: DocData(
+                                        documentType: _titleController.text
+                                            .trim(),
+                                        issueDate: _formKey
+                                            .currentState!
+                                            .value['Issue Date'],
+                                        expiryDate: _formKey
+                                            .currentState!
+                                            .value['Expiry Date'],
+                                      ),
+                                    );
+                                    // ignore: avoid_print
+                                    print(
+                                      'validation succeeded with ${_formKey.currentState!.value}',
+                                    );
+                                  } else {
+                                    // ignore: avoid_print
+                                    print('validation failed');
+                                    ShadToaster.of(context).show(
+                                      ShadToast.destructive(
+                                        title: const Text('Validation failed'),
+                                        description: const Text(
+                                          'Please correct the errors.',
+                                        ),
+                                      ),
+                                    );
+                                  }
+                                },
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                ],
+                ),
               ),
             ),
+          ),
+        ],
+      ),
+      backgroundColor: Colors.transparent,
+    );
+  }
+}
+
+class GlassCard extends StatelessWidget {
+  final Widget child;
+  final EdgeInsetsGeometry? padding;
+  final double radius;
+
+  const GlassCard({
+    super.key,
+    required this.child,
+    this.padding,
+    this.radius = 18,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: padding,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(radius),
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                AppColors.surface.withOpacity(0.32),
+                AppColors.cardMist.withOpacity(0.25),
+              ],
+            ),
+            border: Border.all(color: AppColors.border.withOpacity(0.3)),
+            boxShadow: const [
+              BoxShadow(
+                color: AppColors.shadow,
+                blurRadius: 24,
+                offset: Offset(0, 12),
+                spreadRadius: 2,
+              ),
+            ],
+          ),
+          child: child,
+        ),
+      ),
+    );
+  }
+}
+
+/// Background: richer “liquid glass” with vibrant ribbons and glows
+class _LiquidBackground extends StatelessWidget {
+  const _LiquidBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            AppColors.background,
+            AppColors.cardMist,
+            AppColors.cardClay.withOpacity(0.85),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Stack(
+        children: const [
+          Positioned.fill(child: IgnorePointer(child: _AuroraField())),
+          Positioned.fill(child: IgnorePointer(child: _VibrantBands())),
+          Positioned.fill(child: IgnorePointer(child: _EdgeSweep())),
+          _Glow(size: 260, color: AppColors.primary, top: 120, right: -80),
+          _Glow(size: 220, color: AppColors.cardSage, top: -60, left: -40),
+          _Glow(size: 180, color: AppColors.cardCoral, bottom: -40, right: -20),
+          _Glow(size: 200, color: AppColors.cardAmber, bottom: -60, left: -50),
+        ],
+      ),
+    );
+  }
+}
+
+class _Glow extends StatelessWidget {
+  final double size;
+  final Color color;
+  final double? top, left, right, bottom;
+
+  const _Glow({
+    required this.size,
+    required this.color,
+    this.top,
+    this.left,
+    this.right,
+    this.bottom,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Positioned(
+      top: top,
+      left: left,
+      right: right,
+      bottom: bottom,
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          gradient: RadialGradient(
+            colors: [
+              color.withOpacity(0.22),
+              color.withOpacity(0.08),
+              Colors.transparent,
+            ],
+            stops: const [0.0, 0.55, 1.0],
           ),
         ),
       ),
     );
   }
+}
+
+/// Soft horizontal “liquid” bands (like gentle contour layers).
+class _AuroraField extends StatelessWidget {
+  const _AuroraField();
+
+  @override
+  Widget build(BuildContext context) {
+    return const CustomPaint(painter: _AuroraPainter());
+  }
+}
+
+class _AuroraPainter extends CustomPainter {
+  const _AuroraPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+
+    // Unifying wash
+    canvas.drawRect(
+      rect,
+      Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.cardMist.withOpacity(0.18),
+            AppColors.background.withOpacity(0.12),
+            Colors.transparent,
+          ],
+        ).createShader(rect),
+    );
+
+    // Layered flowing bands
+    const layers = 12;
+    final baseY = size.height * 0.14;
+    const gap = 24.0;
+
+    for (int i = 0; i < layers; i++) {
+      final t = i / (layers - 1);
+      final y = baseY + i * gap;
+
+      Path band = Path()
+        ..moveTo(-40, y)
+        ..cubicTo(
+          size.width * 0.25,
+          y - 28 - i * 1.2,
+          size.width * 0.55,
+          y + 34 + i * 1.8,
+          size.width + 40,
+          y - 10,
+        )
+        ..lineTo(size.width + 40, size.height + 40)
+        ..lineTo(-40, size.height + 40)
+        ..close();
+
+      final warmMix = Color.lerp(
+        AppColors.cardCoral,
+        AppColors.cardAmber,
+        0.35 + 0.25 * t,
+      )!;
+      final coolMix = Color.lerp(
+        AppColors.accent,
+        AppColors.cardSage,
+        0.35 + 0.4 * t,
+      )!;
+
+      final c1 = Color.lerp(
+        coolMix,
+        warmMix,
+        0.25,
+      )!.withOpacity(0.16 - t * 0.05);
+      final c2 = Color.lerp(
+        AppColors.cardClay,
+        AppColors.cardMist,
+        t,
+      )!.withOpacity(0.12 - t * 0.04);
+
+      final paint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [c1, c2, Colors.transparent],
+          stops: const [0.0, 0.7, 1.0],
+        ).createShader(rect)
+        ..blendMode = BlendMode.screen;
+
+      canvas.drawPath(band, paint);
+
+      // Subtle outline to mimic “iso-lines”
+      canvas.drawPath(
+        Path()
+          ..moveTo(-40, y)
+          ..cubicTo(
+            size.width * 0.25,
+            y - 28 - i * 1.2,
+            size.width * 0.55,
+            y + 34 + i * 1.8,
+            size.width + 40,
+            y - 10,
+          ),
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 0.9
+          ..color = AppColors.surfaceDark.withOpacity(0.06),
+      );
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Vibrant diagonal ribbons to add energy while staying on-brand.
+class _VibrantBands extends StatelessWidget {
+  const _VibrantBands();
+
+  @override
+  Widget build(BuildContext context) {
+    return const CustomPaint(painter: _VibrantBandsPainter());
+  }
+}
+
+class _VibrantBandsPainter extends CustomPainter {
+  const _VibrantBandsPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final rect = Offset.zero & size;
+
+    void drawRibbon(
+      double offset,
+      double bend,
+      double thickness,
+      List<Color> colors,
+      double opacity,
+    ) {
+      final top = size.height * (0.65 - offset);
+      final path = Path()
+        ..moveTo(-60, top)
+        ..cubicTo(
+          size.width * 0.25,
+          top - bend * 0.6,
+          size.width * 0.65,
+          top + bend,
+          size.width + 60,
+          top - bend * 0.8,
+        )
+        ..lineTo(size.width + 60, top + thickness)
+        ..cubicTo(
+          size.width * 0.65,
+          top + bend + thickness,
+          size.width * 0.25,
+          top - bend * 0.6 + thickness,
+          -60,
+          top + thickness,
+        )
+        ..close();
+
+      final paint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: colors.map((c) => c.withOpacity(opacity)).toList(),
+          stops: const [0.0, 0.6, 1.0],
+        ).createShader(rect)
+        ..blendMode = BlendMode.screen;
+
+      canvas.drawPath(path, paint);
+
+      // Highlight edge
+      final edge = Path()
+        ..moveTo(-60, top)
+        ..cubicTo(
+          size.width * 0.25,
+          top - bend * 0.6,
+          size.width * 0.65,
+          top + bend,
+          size.width + 60,
+          top - bend * 0.8,
+        );
+
+      canvas.drawPath(
+        edge,
+        Paint()
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.2
+          ..color = AppColors.cardAmber.withOpacity(opacity * 0.55),
+      );
+    }
+
+    // Three ribbons with different offsets and intensities
+    drawRibbon(0.00, 90, 26, [
+      AppColors.cardCoral,
+      AppColors.primary,
+      Colors.transparent,
+    ], 0.22);
+    drawRibbon(0.12, 70, 22, [
+      AppColors.cardAmber,
+      AppColors.cardCoral,
+      Colors.transparent,
+    ], 0.18);
+    drawRibbon(0.26, 60, 18, [
+      AppColors.accent,
+      AppColors.cardSage,
+      Colors.transparent,
+    ], 0.14);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
+}
+
+/// Curved right-edge sweep with nested translucent layers,
+/// echoing the reference’s bright arc on the side.
+class _EdgeSweep extends StatelessWidget {
+  const _EdgeSweep();
+
+  @override
+  Widget build(BuildContext context) {
+    return const CustomPaint(painter: _EdgeSweepPainter());
+  }
+}
+
+class _EdgeSweepPainter extends CustomPainter {
+  const _EdgeSweepPainter();
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final layers = 14;
+    final startX = size.width * 0.62;
+
+    for (int i = 0; i < layers; i++) {
+      final inset = i * 14.0;
+      final t = i / (layers - 1);
+
+      Path p = Path()
+        ..moveTo(startX + inset, -40)
+        ..cubicTo(
+          size.width * (0.80 + 0.04 * (1 - t)),
+          size.height * 0.18,
+          size.width * (0.76 + 0.02 * (1 - t)),
+          size.height * 0.72,
+          size.width + 40,
+          size.height + 40,
+        )
+        ..lineTo(size.width + 40, -40)
+        ..close();
+
+      final a = Color.lerp(
+        AppColors.primary,
+        AppColors.cardAmber,
+        t,
+      )!.withOpacity(0.18 - t * 0.12);
+      const b = Colors.transparent;
+
+      final paint = Paint()
+        ..shader = LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [a, b],
+        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
+        ..blendMode = BlendMode.screen;
+
+      canvas.drawPath(p, paint);
+
+      // Faint internal ridges
+      final ridge = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.0
+        ..color = AppColors.cardClay.withOpacity(0.06 - t * 0.035);
+      canvas.drawPath(p, ridge);
+    }
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

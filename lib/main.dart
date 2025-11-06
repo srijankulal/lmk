@@ -9,6 +9,7 @@ import 'package:lmk/presentation/alerts/screenAlert.dart';
 import 'package:lmk/presentation/dataFrom.dart';
 import 'package:lmk/presentation/setReminder.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'launch/launch.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:firebase_core/firebase_core.dart';
@@ -16,12 +17,14 @@ import 'firebase_options.dart';
 
 FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
     FlutterLocalNotificationsPlugin();
+// ...existing code...
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // await Firebase.initializeApp(options: DefaultFirebaseOptions.currentPlatform);
   await Firebase.initializeApp();
   tz.initializeTimeZones();
+  SharedPreferences prefs = await SharedPreferences.getInstance();
+
   const AndroidInitializationSettings initAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
   flutterLocalNotificationsPlugin
@@ -33,40 +36,52 @@ void main() async {
   const InitializationSettings initSettings = InitializationSettings(
     android: initAndroid,
   );
+
   await flutterLocalNotificationsPlugin.initialize(
     initSettings,
     onDidReceiveNotificationResponse: (response) async {
+      print("Notification clicked with payload: ${response.payload}");
       if (response.payload != null) {
-        // open full screen when tapped
-        runApp(Screenalert(payload: response.payload));
+        print('Notification payload: ${response.payload}');
+        await prefs.setString('payload', response.payload!);
+        // Store the payload for the app to handle
+        await prefs.setString('pendingNotificationPayload', response.payload!);
       }
     },
   );
+
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  final String? payload;
-  const MyApp({super.key, this.payload});
+class MyApp extends StatefulWidget {
+  const MyApp({super.key});
+
+  @override
+  State<MyApp> createState() => _MyAppState();
+}
+
+class _MyAppState extends State<MyApp> {
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {
-    return payload != null
-        ? Screenalert(payload: payload!)
-        : ShadApp(
-            darkTheme: ShadThemeData(
-              brightness: Brightness.dark,
-              colorScheme: const ShadSlateColorScheme.dark(),
-            ),
-            initialRoute: '/',
-            routes: {
-              '/': (context) => AuthWrapper(),
-              '/signIn': (context) => const SignInPage(),
-              '/launch': (context) => const Launch(),
-              '/home': (context) => const Home(),
-              '/docForm': (context) => DocForm(),
-              '/setReminder': (context) => const SetReminderScreen(),
-            },
-          );
+    return ShadApp(
+      darkTheme: ShadThemeData(
+        brightness: Brightness.dark,
+        colorScheme: const ShadSlateColorScheme.dark(),
+      ),
+      initialRoute: '/',
+      routes: {
+        '/': (context) => AuthWrapper(),
+        '/signIn': (context) => const SignInPage(),
+        '/launch': (context) => const Launch(),
+        '/home': (context) => const Home(),
+        '/docForm': (context) => DocForm(),
+        '/setReminder': (context) => const SetReminderScreen(),
+      },
+    );
   }
 }

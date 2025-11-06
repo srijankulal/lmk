@@ -12,13 +12,14 @@ class Screenalert extends StatefulWidget {
 }
 
 class _ScreenalertState extends State<Screenalert> {
-  String get payload =>
-      widget.payload ?? 'Reminder|It\'s time for your scheduled reminder!';
+  String get payload => widget.payload ?? 'Document|No expiry date set';
+
   @override
   Widget build(BuildContext context) {
-    final parts = payload.split('|');
-    final title = parts.isNotEmpty ? parts[0] : 'Reminder';
-    final body = parts.length > 1 ? parts[1] : '';
+    final payloadValue = payload;
+    final parts = payloadValue.split('|');
+    final documentType = parts.isNotEmpty ? parts[0] : 'Document';
+    final expiryDate = parts.length > 1 ? parts[1] : 'No expiry date';
 
     return Scaffold(
       backgroundColor: Colors.black87,
@@ -29,10 +30,10 @@ class _ScreenalertState extends State<Screenalert> {
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                Icon(Icons.alarm, color: Colors.orangeAccent, size: 80),
+                Icon(Icons.description, color: Colors.orangeAccent, size: 80),
                 const SizedBox(height: 20),
                 Text(
-                  title,
+                  documentType,
                   style: const TextStyle(
                     fontSize: 28,
                     color: Colors.white,
@@ -42,31 +43,11 @@ class _ScreenalertState extends State<Screenalert> {
                 ),
                 const SizedBox(height: 10),
                 Text(
-                  body,
+                  'Expires on: $expiryDate',
                   style: const TextStyle(fontSize: 18, color: Colors.white70),
                   textAlign: TextAlign.center,
                 ),
                 const SizedBox(height: 40),
-                // ElevatedButton.icon(
-                //   style: ElevatedButton.styleFrom(
-                //     backgroundColor: Colors.greenAccent[400],
-                //     minimumSize: const Size(double.infinity, 60),
-                //     shape: RoundedRectangleBorder(
-                //       borderRadius: BorderRadius.circular(18),
-                //     ),
-                //   ),
-                //   icon: const Icon(Icons.snooze),
-                //   label: const Text(
-                //     'Snooze 5 min',
-                //     style: TextStyle(color: Colors.black, fontSize: 18),
-                //   ),
-                //   onPressed: () async {
-                //     final now = DateTime.now().add(const Duration(minutes: 5));
-                //     await ;
-                //     Navigator.pop(context);
-                //   },
-                // ),
-                const SizedBox(height: 16),
                 ElevatedButton.icon(
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.redAccent[400],
@@ -93,7 +74,7 @@ class _ScreenalertState extends State<Screenalert> {
 
 Future<void> scheduleReminderTest() async {
   final now = DateTime.now();
-  final scheduledTime = now.add(Duration(seconds: 15)); // Add 15 seconds delay
+  final scheduledTime = now.add(Duration(seconds: 15));
 
   print('⏰ Current time: $now');
   print('⏰ Scheduled for: $scheduledTime');
@@ -115,12 +96,13 @@ Future<void> scheduleReminderTest() async {
 
   await flutterLocalNotificationsPlugin.zonedSchedule(
     0,
-    'Test Reminder',
-    'This is a test reminder scheduled 15 seconds ago',
+    'Document Expiry',
+    'Your document is expiring soon',
     tz.TZDateTime.from(scheduledTime, tz.local),
     notificationDetails,
     androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
+    payload: 'Passport|2024-12-31', // Example payload
   );
 
-  print('✅ Dummy reminder scheduled for $scheduledTime');
+  print('✅ Reminder scheduled for $scheduledTime');
 }

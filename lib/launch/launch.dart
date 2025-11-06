@@ -1,9 +1,20 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import '../main/home.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
-class Launch extends StatelessWidget {
+class Launch extends StatefulWidget {
   const Launch({super.key});
+
+  @override
+  State<Launch> createState() => _LaunchState();
+}
+
+class _LaunchState extends State<Launch> {
+  @override
+  void initState() {
+    super.initState();
+  }
 
   @override
   Widget build(BuildContext context) {

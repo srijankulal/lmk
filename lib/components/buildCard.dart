@@ -1,12 +1,10 @@
-import 'dart:ffi';
 import 'dart:math';
 import 'dart:ui';
-
 import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lmk/components/colours/colours.dart';
-import 'package:lmk/main/home.dart';
+import 'package:lmk/data/repository/delete_reminder.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
@@ -16,9 +14,7 @@ class Reminder {
   final DateTime expiry_date;
   final int index;
   final bool isEnabled;
-  // final Color color;
   final DateTime issue_date;
-  // final bool isEnabled;
 
   Reminder({
     required this.title,
@@ -26,10 +22,7 @@ class Reminder {
     required this.expiry_date,
     required this.index,
     required this.isEnabled,
-    // required this.color,
     DateTime? issue_date,
-
-    // required this.isEnabled,
   }) : issue_date = issue_date ?? DateTime(0, 0, 0);
 }
 
@@ -96,31 +89,27 @@ class _BuildCardState extends State<BuildCard> with TickerProviderStateMixin {
                 final reminder = widget.reminders[index];
                 final fadeAnim = CurvedAnimation(
                   parent: _controller,
-                  curve: Interval((index * 0.1), 1.0, curve: Curves.easeOut),
+                  curve: Interval(
+                    (index * 0.1).clamp(0.0, 1.0),
+                    1.0,
+                    curve: Curves.easeOut,
+                  ),
                 );
 
-                return Align(
-                  heightFactor: 0.67,
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(20),
-                    child: AnimatedBuilder(
-                      animation: fadeAnim,
-                      builder: (context, child) {
-                        return Transform.translate(
-                          offset: Offset(0, 30 * (1 - fadeAnim.value)),
-                          child: Opacity(
-                            opacity: fadeAnim.value,
-                            child: Padding(
-                              padding: const EdgeInsets.only(top: 18),
-                              child: _NeumorphicReminderCard(
-                                reminder: reminder,
-                              ),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ),
+                return AnimatedBuilder(
+                  animation: fadeAnim,
+                  builder: (context, child) {
+                    return Transform.translate(
+                      offset: Offset(0, 30 * (1 - fadeAnim.value)),
+                      child: Opacity(
+                        opacity: fadeAnim.value,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: _GlossyReminderCard(reminder: reminder),
+                        ),
+                      ),
+                    );
+                  },
                 );
               },
             ),
@@ -128,17 +117,16 @@ class _BuildCardState extends State<BuildCard> with TickerProviderStateMixin {
   }
 }
 
-class _NeumorphicReminderCard extends StatefulWidget {
+class _GlossyReminderCard extends StatefulWidget {
   final Reminder reminder;
 
-  const _NeumorphicReminderCard({required this.reminder});
+  const _GlossyReminderCard({required this.reminder});
 
   @override
-  State<_NeumorphicReminderCard> createState() =>
-      _NeumorphicReminderCardState();
+  State<_GlossyReminderCard> createState() => _GlossyReminderCardState();
 }
 
-class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
+class _GlossyReminderCardState extends State<_GlossyReminderCard> {
   static final List<Color> cardColors = [
     AppColors.cardSage,
     AppColors.cardClay,
@@ -146,6 +134,15 @@ class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
     AppColors.cardCoral,
   ];
   bool _isPressed = false;
+  late Color _cardColor;
+  late bool _isEnabled;
+
+  @override
+  void initState() {
+    super.initState();
+    _cardColor = cardColors[Random().nextInt(cardColors.length)];
+    _isEnabled = widget.reminder.isEnabled;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -156,12 +153,7 @@ class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
         extentRatio: 0.25,
         children: [
           SlidableAction(
-            borderRadius: BorderRadius.only(
-              topLeft: Radius.circular(20),
-              bottomLeft: Radius.circular(20),
-              topRight: Radius.circular(10),
-              bottomRight: Radius.circular(10),
-            ),
+            borderRadius: BorderRadius.all(Radius.circular(26)),
             onPressed: (context) {
               showShadDialog(
                 context: context,
@@ -227,8 +219,63 @@ class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
                                   ShadButton(
                                     backgroundColor: Colors.redAccent,
                                     child: const Text('Delete'),
-                                    onPressed: () =>
-                                        Navigator.of(context).pop(true),
+                                    onPressed: () async {
+                                      showDialog(
+                                        context: context,
+                                        barrierDismissible: false,
+                                        builder: (context) => Center(
+                                          child: CircularProgressIndicator(),
+                                        ),
+                                      );
+
+                                      String result = await DeleteReminder()
+                                          .deleteReminder(
+                                            widget.reminder.index.toString(),
+                                          );
+
+                                      Navigator.of(
+                                        context,
+                                        rootNavigator: true,
+                                      ).pop();
+                                      if (result == "Deleted Successfully") {
+                                        Navigator.of(context).pop(true);
+                                        final theme = ShadTheme.of(context);
+                                        ShadToaster.of(context).show(
+                                          ShadToast(
+                                            duration: const Duration(
+                                              milliseconds: 1500,
+                                            ),
+                                            backgroundColor: AppColors.success,
+                                            title: const Text(
+                                              'Reminder Deleted',
+                                              style: TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        Navigator.of(context).pop(false);
+                                        final theme = ShadTheme.of(context);
+                                        ShadToaster.of(context).show(
+                                          ShadToast.destructive(
+                                            duration: const Duration(
+                                              milliseconds: 1500,
+                                            ),
+                                            backgroundColor:
+                                                theme.colorScheme.destructive,
+                                            title: const Text(
+                                              'Failed to Delete Reminder',
+                                              style: TextStyle(
+                                                color: AppColors.textPrimary,
+                                                fontWeight: FontWeight.bold,
+                                              ),
+                                            ),
+                                          ),
+                                        );
+                                      }
+                                    },
                                   ),
                                 ],
                               ),
@@ -241,9 +288,11 @@ class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
                 ),
               );
             },
-            backgroundColor: Colors.redAccent,
+            backgroundColor: Colors.redAccent.withOpacity(0.8),
+            autoClose: true,
+
             foregroundColor: Colors.white,
-            icon: Icons.delete,
+            icon: LucideIcons.trash2,
             label: 'Delete',
           ),
         ],
@@ -256,83 +305,217 @@ class _NeumorphicReminderCardState extends State<_NeumorphicReminderCard> {
         },
         onTapCancel: () => setState(() => _isPressed = false),
         child: AnimatedScale(
-          scale: _isPressed ? 0.96 : 1.0,
+          scale: _isPressed ? 0.97 : 1.0,
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOut,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: AppColors.background.withAlpha(1000),
-                width: 1,
+              borderRadius: BorderRadius.circular(24),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  _cardColor.withOpacity(_isEnabled ? 0.9 : 0.5),
+                  _cardColor.withOpacity(_isEnabled ? 0.8 : 0.4),
+                ],
               ),
-            ),
-            child: Neumorphic(
-              style: NeumorphicStyle(
-                depth: _isPressed ? -4 : 6,
-                intensity: _isPressed ? 0.9 : 0,
-                color: cardColors[Random().nextInt(cardColors.length)],
-                boxShape: NeumorphicBoxShape.roundRect(
-                  BorderRadius.circular(20),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withOpacity(0.08),
+                  blurRadius: 16,
+                  spreadRadius: 0,
+                  offset: const Offset(0, 8),
                 ),
-                shadowLightColor: Colors.white.withAlpha(80),
-                shadowDarkColor: Colors.black.withAlpha(25),
-              ),
-              margin: const EdgeInsets.only(bottom: 16),
-              padding: const EdgeInsets.symmetric(vertical: 32, horizontal: 20),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Texts
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          widget.reminder.title,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          "Expiry: ${widget.reminder.expiry_date.toLocal().toString().split(' ')[0]}",
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 14,
-                          ),
-                        ),
+                BoxShadow(
+                  color: _cardColor.withOpacity(0.15),
+                  blurRadius: 12,
+                  spreadRadius: -4,
+                  offset: const Offset(0, 4),
+                ),
+              ],
+            ),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
+                child: Container(
+                  decoration: BoxDecoration(
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.15),
+                      width: 1.5,
+                    ),
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        Colors.white.withOpacity(0.12),
+                        Colors.white.withOpacity(0.05),
                       ],
                     ),
                   ),
-                  const SizedBox(width: 12),
-
-                  // Time pill
-                  Neumorphic(
-                    style: NeumorphicStyle(
-                      depth: 3,
-                      intensity: 0,
-                      color: AppColors.primary,
-                      boxShape: NeumorphicBoxShape.roundRect(
-                        BorderRadius.circular(16),
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              widget.reminder.title,
+                              style: TextStyle(
+                                color: AppColors.textPrimary.withOpacity(
+                                  _isEnabled ? 1.0 : 0.5,
+                                ),
+                                fontSize: 20,
+                                fontWeight: FontWeight.bold,
+                                letterSpacing: -0.5,
+                                decoration: _isEnabled
+                                    ? null
+                                    : TextDecoration.lineThrough,
+                              ),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.2),
+                              borderRadius: BorderRadius.circular(20),
+                              border: Border.all(
+                                color: Colors.white.withOpacity(0.25),
+                                width: 1.5,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.04),
+                                  blurRadius: 6,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 10,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.access_time_rounded,
+                                  color: AppColors.textPrimary.withOpacity(
+                                    _isEnabled ? 1.0 : 0.5,
+                                  ),
+                                  size: 18,
+                                ),
+                                const SizedBox(width: 6),
+                                Text(
+                                  widget.reminder.time.format(context),
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary.withOpacity(
+                                      _isEnabled ? 1.0 : 0.5,
+                                    ),
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: 15,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 6,
-                    ),
-                    child: Text(
-                      widget.reminder.time.format(context),
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontWeight: FontWeight.w600,
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              color: Colors.white.withOpacity(0.12),
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 12,
+                              vertical: 8,
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  Icons.calendar_today_rounded,
+                                  color: AppColors.textSecondary.withOpacity(
+                                    _isEnabled ? 1.0 : 0.5,
+                                  ),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 8),
+                                Text(
+                                  "Expires ${widget.reminder.expiry_date.toLocal().toString().split(' ')[0]}",
+                                  style: TextStyle(
+                                    color: AppColors.textPrimary.withOpacity(
+                                      _isEnabled ? 0.9 : 0.5,
+                                    ),
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          GestureDetector(
+                            onTap: () {
+                              setState(() {
+                                _isEnabled = !_isEnabled;
+                              });
+                              // TODO: Update reminder status in backend/database
+                            },
+                            child: Container(
+                              width: 52,
+                              height: 28,
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(14),
+                                color: _isEnabled
+                                    ? AppColors.success.withOpacity(0.8)
+                                    : Colors.white.withOpacity(0.3),
+                                border: Border.all(
+                                  color: Colors.white.withOpacity(0.3),
+                                  width: 1.5,
+                                ),
+                              ),
+                              child: AnimatedAlign(
+                                duration: const Duration(milliseconds: 200),
+                                curve: Curves.easeInOut,
+                                alignment: _isEnabled
+                                    ? Alignment.centerRight
+                                    : Alignment.centerLeft,
+                                child: Container(
+                                  width: 22,
+                                  height: 22,
+                                  margin: const EdgeInsets.symmetric(
+                                    horizontal: 3,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: Colors.white,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.15),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),

@@ -13,7 +13,7 @@ class AuthWrapper extends StatelessWidget {
         stream: FirebaseAuth.instance.authStateChanges(),
         builder: (context, snapshot) {
           if (snapshot.hasData) {
-            return const Launch();
+            return Launch();
           } else {
             return const SignInPage();
           }

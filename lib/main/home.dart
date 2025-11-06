@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -14,9 +12,7 @@ import 'package:lmk/data/repository/post_repo.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/avatar_card.dart';
 import 'package:lmk/components/colours/colours.dart';
-import 'package:lmk/presentation/alerts/screenAlert.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:lmk/data/models/reminders.dart' as reminders_model;
 
 class Home extends StatefulWidget {
   const Home({super.key});
@@ -111,94 +107,6 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
     return granted ?? false;
   }
-
-  // List<Reminder> reminders = [
-  //   // //... (keep the reminders list as is)
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  //   // Reminder(
-  //   //   title: 'Passport Renewal',
-  //   //   expiry_date: DateTime(2024, 11, 20),
-  //   //   time: TimeOfDay(hour: 10, minute: 0),
-  //   //   color: cardColors[Random().nextInt(cardColors.length)],
-  //   // ),
-  // ];
 
   void showPermissionDeniedToast() {
     final theme = ShadTheme.of(context);
@@ -320,24 +228,128 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             ),
             Expanded(
               child: Transform.translate(
-                offset: const Offset(0, -24),
-                child: Container(
-                  decoration: const BoxDecoration(
-                    color: AppColors.background,
-                    borderRadius: BorderRadius.all(Radius.circular(32)),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black12,
-                        blurRadius: 10,
-                        offset: Offset(0, -5),
+                offset: const Offset(0, -32),
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.all(Radius.circular(36)),
+                  child: Stack(
+                    fit: StackFit.expand,
+                    children: [
+                      // Base gradient background (liquid-like)
+                      DecoratedBox(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              AppColors.background,
+                              AppColors.cardMist,
+                              AppColors.cardClay.withOpacity(0.85),
+                            ],
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                          ),
+                        ),
+                      ),
+                      // Vibrant soft glows
+                      Positioned(
+                        top: 120,
+                        right: -80,
+                        child: Container(
+                          width: 260,
+                          height: 260,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                AppColors.primary.withOpacity(0.22),
+                                AppColors.primary.withOpacity(0.08),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.55, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        top: -60,
+                        left: -40,
+                        child: Container(
+                          width: 220,
+                          height: 220,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                AppColors.cardSage.withOpacity(0.22),
+                                AppColors.cardSage.withOpacity(0.08),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.55, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -40,
+                        right: -20,
+                        child: Container(
+                          width: 180,
+                          height: 180,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                AppColors.cardCoral.withOpacity(0.22),
+                                AppColors.cardCoral.withOpacity(0.08),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.55, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                      Positioned(
+                        bottom: -60,
+                        left: -50,
+                        child: Container(
+                          width: 200,
+                          height: 200,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            gradient: RadialGradient(
+                              colors: [
+                                AppColors.cardAmber.withOpacity(0.22),
+                                AppColors.cardAmber.withOpacity(0.08),
+                                Colors.transparent,
+                              ],
+                              stops: const [0.0, 0.55, 1.0],
+                            ),
+                          ),
+                        ),
+                      ),
+                      // Content
+                      Container(
+                        // subtle inner gradient for “glass” feel
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment.topLeft,
+                            end: Alignment.bottomRight,
+                            colors: [
+                              AppColors.surface.withOpacity(0.12),
+                              AppColors.cardMist.withOpacity(0.08),
+                              Colors.transparent,
+                            ],
+                          ),
+                          border: Border.all(
+                            color: AppColors.border.withOpacity(0.12),
+                          ),
+                        ),
+                        child: BuildCard(reminders: reminders),
                       ),
                     ],
                   ),
-                  child: BuildCard(reminders: reminders),
                 ),
               ),
             ),
-            const SizedBox(height: 44),
+            const SizedBox(height: 20),
           ],
         ),
       ),
