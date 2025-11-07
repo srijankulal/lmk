@@ -7,8 +7,8 @@ import 'package:lmk/auth/services/google_auth.dart';
 import 'package:lmk/components/buildCard.dart';
 import 'package:lmk/components/floatActionButton.dart';
 import 'package:lmk/data/models/post/post.dart';
-import 'package:lmk/data/repository/get_reminders.dart';
-import 'package:lmk/data/repository/post_repo.dart';
+import 'package:lmk/data/repository/remote/get_reminders.dart';
+import 'package:lmk/data/repository/remote/post_repo.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/avatar_card.dart';
 import 'package:lmk/components/colours/colours.dart';
@@ -316,8 +316,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                             shape: BoxShape.circle,
                             gradient: RadialGradient(
                               colors: [
-                                AppColors.cardAmber.withOpacity(0.22),
-                                AppColors.cardAmber.withOpacity(0.08),
+                                AppColors.cardAmber.withAlpha(22),
+                                AppColors.cardAmber.withAlpha(8),
                                 Colors.transparent,
                               ],
                               stops: const [0.0, 0.55, 1.0],
@@ -333,13 +333,13 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
                             colors: [
-                              AppColors.surface.withOpacity(0.12),
-                              AppColors.cardMist.withOpacity(0.08),
+                              AppColors.surface.withAlpha(12),
+                              AppColors.cardMist.withAlpha(8),
                               Colors.transparent,
                             ],
                           ),
                           border: Border.all(
-                            color: AppColors.border.withOpacity(0.12),
+                            color: AppColors.border.withAlpha(12),
                           ),
                         ),
                         child: BuildCard(reminders: reminders),
@@ -392,6 +392,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       final ImagePicker picker = ImagePicker();
       final XFile? image = await picker.pickImage(
         source: source == "camera" ? ImageSource.camera : ImageSource.gallery,
+        imageQuality: 60, // 0-100 (lower = smaller)
       );
 
       if (image == null) {
@@ -399,6 +400,11 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         return;
       }
       final img = image.path;
+      // final byteSize = await image.length();
+      // print(
+      //   'Picked image size: $byteSize bytes (${(byteSize / 1024).toStringAsFixed(2)} KB)',
+      // );
+
       PostRepository postrepo = PostRepository();
       final loading = SpinKitFadingCube(color: AppColors.primary, size: 25.0);
 

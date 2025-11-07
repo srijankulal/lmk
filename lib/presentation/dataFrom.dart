@@ -42,7 +42,7 @@ class _DocFormState extends State<DocForm> {
       extendBodyBehindAppBar: true,
       appBar: AppBar(
         title: const Text('Document details'),
-        backgroundColor: AppColors.surfaceDark.withOpacity(0.15),
+        backgroundColor: AppColors.surfaceDark.withAlpha(38),
         elevation: 0,
         foregroundColor: AppColors.textPrimary,
         flexibleSpace: ClipRect(

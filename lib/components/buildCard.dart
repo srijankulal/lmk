@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:lmk/components/colours/colours.dart';
-import 'package:lmk/data/repository/delete_reminder.dart';
+import 'package:lmk/data/repository/remote/delete_reminder.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
