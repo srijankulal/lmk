@@ -3,9 +3,7 @@ import 'package:flutter/material.dart';
 /// Central color definitions for your shadcn_ui theme
 class AppColors {
   // 🌆 Primary theme colors
-  static const Color primary = Color(
-    0xFFFF5B2E,
-  ); // vivid orange for alerts & FAB
+  static const Color primary = Color(0xFFFF5B2E); // vivid orange for alerts & FAB
   static const Color secondary = Color(
     0xFF445046,
   ); // deep gray-green background

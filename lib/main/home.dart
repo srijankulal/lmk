@@ -1,11 +1,15 @@
+import 'dart:async';
+
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter_expandable_fab/flutter_expandable_fab.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:lmk/auth/services/google_auth.dart';
 import 'package:lmk/components/buildCard.dart';
 import 'package:lmk/components/floatActionButton.dart';
+import 'package:lmk/data/local/reminder_local.dart';
 import 'package:lmk/data/models/post/post.dart';
 import 'package:lmk/data/repository/remote/get_reminders.dart';
 import 'package:lmk/data/repository/remote/post_repo.dart';
@@ -30,6 +34,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       FlutterLocalNotificationsPlugin();
   List<Reminder> reminders = [];
   String? token;
+  StreamSubscription<InternetStatus>? _connectionSubscription;
+  bool _isOnline = true;
 
   @override
   void initState() {
@@ -45,6 +51,40 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     );
     _controller.forward();
     _initNotifications();
+    //start listening to connectivity changes
+    _subscribeToConnection();
+  }
+
+  void _subscribeToConnection() {
+    // set initial state
+    InternetConnection().hasInternetAccess.then((online) {
+      if (mounted) setState(() => _isOnline = online);
+    });
+
+    _connectionSubscription = InternetConnection().onStatusChange.listen((
+      InternetStatus status,
+    ) {
+      final online = status == InternetStatus.connected;
+      if (!mounted) return;
+
+      if (online != _isOnline) {
+        setState(() => _isOnline = online);
+
+        // Optional: toast on change
+        if (online) {
+          ShadToaster.of(
+            context,
+          ).show(ShadToast(title: const Text('Back online')));
+        } else {
+          ShadToaster.of(context).show(
+            ShadToast.destructive(
+              title: const Text('You are offline'),
+              description: const Text('Some actions will be unavailable.'),
+            ),
+          );
+        }
+      }
+    });
   }
 
   Future<void> _initToken() async {
@@ -54,31 +94,27 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
   Future<void> _loadReminders() async {
     print("Fetching reminders with token: $token");
-    if (token != null) {
-      final fetchedReminders = await GetReminders().fetchReminders(
-        token!,
-        FirebaseAuth.instance.currentUser!.uid,
-      );
-      if (mounted) {
-        setState(() {
-          // Convert ReminderModel objects to Reminder objects
-          reminders = (fetchedReminders.reminders ?? [])
-              .map(
-                (reminderModel) => Reminder(
-                  title: reminderModel.title as String,
-                  expiry_date: reminderModel.expiryDate as DateTime,
-                  time: _parseTimeOfDay(reminderModel.time as String),
-                  index: reminderModel.index as int,
-                  isEnabled: reminderModel.isEnabled as bool,
-                  issue_date: reminderModel.issuedDate as DateTime,
-                ),
-              )
-              .toList();
-          print(reminders[0].time);
-        });
-        print(reminders[0].time);
-      }
-    }
+    ReminderLocalDataSource localDataSource = ReminderLocalDataSource();
+    final localReminders = await localDataSource.getReminders(
+      FirebaseAuth.instance.currentUser!.uid,
+    );
+    setState(() {
+      reminders = localReminders
+          .map(
+            (localReminder) => Reminder(
+              userId: localReminder.userId,
+              id: localReminder.id,
+              title: localReminder.title,
+              expiry_date: localReminder.expiryDate as DateTime,
+              time: _parseTimeOfDay(localReminder.time as String),
+              index: localReminder.index as int,
+              isEnabled: localReminder.isEnabled as bool,
+              issue_date: localReminder.issuedDate as DateTime,
+            ),
+          )
+          .toList();
+    });
+    print("Loaded ${reminders.length} reminders from local storage.");
   }
 
   TimeOfDay _parseTimeOfDay(String time) {
@@ -95,6 +131,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   @override
   void dispose() {
     _controller.dispose();
+    _connectionSubscription?.cancel();
     super.dispose();
   }
 
@@ -132,28 +169,36 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     );
   }
 
-  Future<void> scheduleReminderTest() async {
-    final hasPermission = await checkNotificationPermission();
-    if (!hasPermission) {
-      showPermissionDeniedToast();
-      return;
-    }
-
-    const androidDetails = AndroidNotificationDetails(
-      'reminder_channel',
-      'Reminders',
-      channelDescription: 'Reminder notifications',
-      importance: Importance.defaultImportance,
-      priority: Priority.defaultPriority,
-    );
-    const notificationDetails = NotificationDetails(android: androidDetails);
-
-    // Simple immediate notification to verify permission flow.
-    await flutterLocalNotificationsPlugin.show(
-      0,
-      'Notifications enabled',
-      'You will receive reminders.',
-      notificationDetails,
+  void showOfflineToast() {
+    final theme = ShadTheme.of(context);
+    ShadToaster.of(context).show(
+      ShadToast.destructive(
+        title: const Text('You are offline'),
+        description: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: const [
+            Icon(LucideIcons.squarePen, size: 16),
+            SizedBox(width: 8),
+            Flexible(
+              child: Text(
+                'Some actions will be unavailable. Use Manual entry.',
+              ),
+            ),
+          ],
+        ),
+        action: ShadButton.destructive(
+          decoration: ShadDecoration(
+            border: ShadBorder.all(
+              color: theme.colorScheme.destructiveForeground,
+              width: 1,
+            ),
+          ),
+          onPressed: () {
+            ShadToaster.of(context).hide();
+          },
+          child: const Text('Dismiss'),
+        ),
+      ),
     );
   }
 
@@ -241,7 +286,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                             colors: [
                               AppColors.background,
                               AppColors.cardMist,
-                              AppColors.cardClay.withOpacity(0.85),
+                              AppColors.cardClay.withAlpha(85),
                             ],
                             begin: Alignment.topLeft,
                             end: Alignment.bottomRight,
@@ -342,7 +387,14 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                             color: AppColors.border.withAlpha(12),
                           ),
                         ),
-                        child: BuildCard(reminders: reminders),
+                        child: BuildCard(
+                          reminders: reminders,
+                          onDelete: (int id) {
+                            setState(() {
+                              reminders.removeWhere((r) => r.id == id);
+                            });
+                          },
+                        ),
                       ),
                     ],
                   ),
@@ -357,7 +409,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       floatingActionButton: GlassExpandableFab(
         actions: [
           FabAction(
-            icon: Icons.photo_library_rounded,
+            icon: LucideIcons.images,
             // label: 'Medicine',
             onTap: () async {
               final hasPermission = await checkNotificationPermission();
@@ -365,12 +417,16 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 showPermissionDeniedToast();
                 return;
               }
+              if (!_isOnline) {
+                showOfflineToast();
+                return;
+              }
               await picker("gallery");
             },
           ),
 
           FabAction(
-            icon: Icons.camera_alt_rounded,
+            icon: LucideIcons.camera,
             // label: 'Stats',
             onTap: () async {
               final hasPermission = await checkNotificationPermission();
@@ -378,7 +434,23 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 showPermissionDeniedToast();
                 return;
               }
+              if (!_isOnline) {
+                showOfflineToast();
+                return;
+              }
               await picker("camera");
+            },
+          ),
+          FabAction(
+            icon: LucideIcons.squarePen,
+            onTap: () async {
+              final hasPermission = await checkNotificationPermission();
+              if (!hasPermission) {
+                showPermissionDeniedToast();
+                return;
+              }
+              DocData docData = DocData();
+              Navigator.pushNamed(context, '/docForm', arguments: docData);
             },
           ),
         ],

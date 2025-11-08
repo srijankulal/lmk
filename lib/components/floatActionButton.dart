@@ -99,7 +99,7 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
               builder: (context, _) {
                 final t = _expand.value;
                 // Wider for bigger buttons + more spacing
-                final targetWidth = (widget.actions.length * 90.0) + 40.0;
+                final targetWidth = (widget.actions.length * 80.0) + 10.0;
                 final width = targetWidth * t;
 
                 return IgnorePointer(

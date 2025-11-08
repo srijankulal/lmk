@@ -3,6 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/data/local/reminder_local.dart';
+import 'package:lmk/data/models/local/local_reminder.dart';
 import 'package:lmk/data/models/post/post.dart';
 import 'package:lmk/data/repository/remote/create_reminder.dart';
 import 'package:lmk/main.dart';
@@ -276,28 +278,39 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
 
     final user = FirebaseAuth.instance.currentUser;
     final uid = user?.uid ?? '';
-    final token = await user?.getIdToken() ?? '';
-    final repo = CreateReminderRepository();
+    // final token = await user?.getIdToken() ?? '';
+    // final repo = CreateReminderRepository();
 
     try {
-      await repo.createReminder(
-        token: token,
-        uid: uid,
+      final repo = ReminderLocal(
+        userId: uid,
         title: 'Reminder for ${args.documentType}',
+        index: notificationId,
         time:
             '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
         expiryDate: args.expiryDate as DateTime,
-        setDate: DateTime(
-          selectedDate.year,
-          selectedDate.month,
-          selectedDate.day,
-          selectedTime.hour,
-          selectedTime.minute,
-        ),
-        isEnabled: true,
-        index: notificationId,
         issuedDate: args.issueDate ?? DateTime.now(),
       );
+      // print('Saving local reminder: $repo');
+      await ReminderLocalDataSource().addReminder(repo);
+      // await repo.createReminder(
+      //   token: token,
+      //   uid: uid,
+      //   title: 'Reminder for ${args.documentType}',
+      //   time:
+      //       '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+      //   expiryDate: args.expiryDate as DateTime,
+      //   setDate: DateTime(
+      //     selectedDate.year,
+      //     selectedDate.month,
+      //     selectedDate.day,
+      //     selectedTime.hour,
+      //     selectedTime.minute,
+      //   ),
+      //   isEnabled: true,
+      //   index: notificationId,
+      //   issuedDate: args.issueDate ?? DateTime.now(),
+      // );
 
       ShadToaster.of(context).show(
         ShadToast(
@@ -308,6 +321,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
       );
       Navigator.pushNamed(context, '/home');
     } catch (e) {
+      print('Error saving reminder: $e');
       ShadToaster.of(context).show(
         ShadToast.destructive(
           title: const Text('Failed to save reminder'),

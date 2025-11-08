@@ -4,6 +4,7 @@ import 'package:lmk/auth/screen/sign-in-page.dart';
 import 'package:lmk/auth/screen/wrapper.dart';
 import 'package:lmk/auth/services/google_auth.dart';
 import 'package:lmk/data/models/post/post.dart';
+import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/main/home.dart';
 import 'package:lmk/presentation/alerts/screenAlert.dart';
 import 'package:lmk/presentation/dataFrom.dart';
@@ -49,8 +50,14 @@ void main() async {
       }
     },
   );
+  await _dbSetup();
 
   runApp(const MyApp());
+}
+
+Future<void> _dbSetup() async {
+  // Any database setup code can go here
+  await IsarService().db;
 }
 
 class MyApp extends StatefulWidget {
