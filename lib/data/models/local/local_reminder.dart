@@ -12,6 +12,7 @@ class ReminderLocal {
   String? time;
   DateTime? issuedDate;
   DateTime? expiryDate;
+  DateTime? reminderDate;
   bool? isEnabled = true;
   bool synced = false; // ✅ LOCAL ONLY
   late DateTime createdAt = DateTime.now();
@@ -26,11 +27,11 @@ class ReminderLocal {
     this.time,
     this.issuedDate,
     this.expiryDate,
+    this.reminderDate,
     this.isEnabled = true,
     DateTime? updatedAt,
     this.synced = false,
-  }) :
-       updatedAt = updatedAt ?? DateTime.now();
+  }) : updatedAt = updatedAt ?? DateTime.now();
 
   ReminderLocal copyWith({
     Id? id,
@@ -41,6 +42,7 @@ class ReminderLocal {
     String? time,
     DateTime? issuedDate,
     DateTime? expiryDate,
+    DateTime? reminderDate,
     bool? isEnabled,
     bool? synced,
     DateTime? createdAt,
@@ -55,6 +57,7 @@ class ReminderLocal {
       time: time ?? this.time,
       issuedDate: issuedDate ?? this.issuedDate,
       expiryDate: expiryDate ?? this.expiryDate,
+      reminderDate: reminderDate ?? this.reminderDate,
       isEnabled: isEnabled ?? this.isEnabled,
       synced: synced ?? this.synced,
       updatedAt: updatedAt ?? this.updatedAt,

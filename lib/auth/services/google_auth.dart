@@ -1,6 +1,9 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:lmk/data/local/user_local.dart';
+import 'package:lmk/data/models/local/local_user.dart';
+import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/launch/launch.dart';
 import 'package:lmk/data/repository/userRegister.dart';
 
@@ -98,16 +101,22 @@ class AuthMethods {
         final String? idTokenFirebase = await user.getIdToken();
         if (idTokenFirebase != null) {
           try {
-        // Call your backend API to register the user in your database
-        await UserRegister().registerUser(idTokenFirebase, userDetails);
-        print("User registered on backend successfully.");
+            // Call your backend API to register the user in your database
+            await UserRegister().registerUser(idTokenFirebase, userDetails);
+            print("User registered on backend successfully.");
+            final details = UserLocal()
+              ..uid = user.uid
+              ..name = user.displayName ?? "No Name"
+              ..photoUrl = user.photoURL ?? "";
+            UserLocalDataSource().saveUser(details);
           } catch (e) {
-        // Handle potential errors from your backend, e.g., user already exists
-        print("Error registering user on backend: $e");
-        // You might not want to throw an error here if user already existing
-        // is not considered a sign-in failure.
+            // Handle potential errors from your backend, e.g., user already exists
+            print("Error registering user on backend: $e");
+            // You might not want to throw an error here if user already existing
+            // is not considered a sign-in failure.
           }
         }
+        if (!context.mounted)
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Launch()),
@@ -127,5 +136,6 @@ class AuthMethods {
   Future<void> signOut() async {
     await _googleSignIn.signOut();
     await auth.signOut();
+    await UserLocalDataSource().clearUser();
   }
 }

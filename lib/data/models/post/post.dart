@@ -12,8 +12,14 @@ class DocData {
   String? documentType;
   DateTime? issueDate;
   DateTime? expiryDate;
+  DateTime? reminderDate;
 
-  DocData({this.documentType, this.issueDate, this.expiryDate});
+  DocData({
+    this.documentType,
+    this.issueDate,
+    this.expiryDate,
+    this.reminderDate,
+  });
 
   factory DocData.fromJson(Map<String, dynamic> json) => DocData(
     documentType: json["document_type"],

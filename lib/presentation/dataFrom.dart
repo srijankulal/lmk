@@ -140,7 +140,7 @@ class _DocFormState extends State<DocForm> {
                           ShadDatePickerFormField(
                             id: 'Issue Date',
                             label: const Text('Issue date'),
-                            enabled: false,
+                            // enabled: false,
                             placeholder: const Text('Issue date not found'),
                             initialValue: _args?.issueDate != null
                                 ? DateTime.parse('${_args!.issueDate}Z')
@@ -175,6 +175,7 @@ class _DocFormState extends State<DocForm> {
                               const Spacer(),
                               ShadButton(
                                 child: const Text('Next'),
+                                backgroundColor: AppColors.primary,
                                 onPressed: () {
                                   if (_formKey.currentState!
                                       .saveAndValidate()) {

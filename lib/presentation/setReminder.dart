@@ -32,6 +32,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
   @override
   Widget build(BuildContext context) {
     final args = _args!;
+    final ThemeData theme = Theme.of(context);
     return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
@@ -102,10 +103,47 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                             label: const Text('Reminder date'),
                             closeOnSelection: true,
                             placeholder: const Text('Select reminder date'),
-                            initialValue: _computeReminderDate(args.expiryDate),
-                            validator: (value) => value == null
-                                ? 'Reminder date is required'
-                                : null,
+                            // Clamp initial value so it is never in the past
+                            initialValue:
+                                // () {
+                                // final d =
+                                _computeReminderDate(args.expiryDate),
+                            //   final now = DateTime.now();
+                            //   final startOfToday = DateTime(
+                            //     now.year,
+                            //     now.month,
+                            //     now.day,
+                            //   );
+                            //   if (d == null) return null;
+                            //   return d.isBefore(startOfToday)
+                            //       ? startOfToday
+                            //       : d;
+                            // }(),
+                            // If supported, prevent picking past dates in the UI
+                            selectableDayPredicate: (day) {
+                              final now = DateTime.now();
+                              final startOfToday = DateTime(
+                                now.year,
+                                now.month,
+                                now.day,
+                              );
+                              return !day.isBefore(startOfToday);
+                            },
+                            validator: (value) {
+                              if (value == null) {
+                                return 'Reminder date is required';
+                              }
+                              final now = DateTime.now();
+                              final startOfToday = DateTime(
+                                now.year,
+                                now.month,
+                                now.day,
+                              );
+                              if (value.isBefore(startOfToday)) {
+                                return 'Reminder date cannot be in the past';
+                              }
+                              return null;
+                            },
                           ),
                           const SizedBox(height: 16),
                           Row(
@@ -144,7 +182,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                                   ),
                                   child: Text(
                                     _selectedTime != null
-                                        ? 'Selected: ${_selectedTime!.hour.toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')}'
+                                        ? 'Selected: ${(_selectedTime!.hour % 12 == 0 ? 12 : _selectedTime!.hour % 12).toString().padLeft(2, '0')}:${_selectedTime!.minute.toString().padLeft(2, '0')} ${_selectedTime!.hour >= 12 ? 'PM' : 'AM'}'
                                         : 'No time selected',
                                     style: Theme.of(context)
                                         .textTheme
@@ -161,22 +199,37 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                               ShadButton(
                                 leading: const Icon(LucideIcons.clock),
                                 child: const Text('Pick time'),
+                                backgroundColor: AppColors.primary,
                                 onPressed: () async {
                                   final picked = await showTimePicker(
                                     context: context,
                                     initialTime: TimeOfDay.now(),
                                     builder: (context, child) {
-                                      return Theme(
-                                        data: Theme.of(context).copyWith(
-                                          colorScheme: ColorScheme.light(
-                                            primary: AppColors.primary,
-                                            onPrimary: AppColors.background,
-                                            surface: AppColors.surface,
-                                            onSurface: AppColors.primary,
-                                          ),
-                                        ),
-                                        child: child!,
-                                      );
+                                      return theme.brightness == Brightness.dark
+                                          ? Theme(
+                                              data: Theme.of(context).copyWith(
+                                                colorScheme: ColorScheme.dark(
+                                                  primary: AppColors.primary,
+                                                  onPrimary:
+                                                      AppColors.background,
+                                                  surface: AppColors.surface,
+                                                  onSurface: AppColors.primary,
+                                                ),
+                                              ),
+                                              child: child!,
+                                            )
+                                          : Theme(
+                                              data: Theme.of(context).copyWith(
+                                                colorScheme: ColorScheme.light(
+                                                  primary: AppColors.primary,
+                                                  onPrimary:
+                                                      AppColors.background,
+                                                  surface: AppColors.surface,
+                                                  onSurface: AppColors.primary,
+                                                ),
+                                              ),
+                                              child: child!,
+                                            );
                                     },
                                   );
                                   if (picked != null) {
@@ -194,11 +247,12 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                                   foregroundColor: AppColors.textSecondary,
                                 ),
                                 onPressed: () => Navigator.maybePop(context),
-                                child: const Text('Cancel'),
+                                child: const Text('Back'),
                               ),
                               const Spacer(),
                               ShadButton(
                                 child: const Text('Set reminder'),
+                                backgroundColor: AppColors.primary,
                                 onPressed: () => _onSubmit(args),
                               ),
                             ],
@@ -218,7 +272,8 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
   }
 
   Future<void> _onSubmit(DocData args) async {
-    if (!_formKey.currentState!.saveAndValidate() || _selectedTime == null) {
+    final isValid = _formKey.currentState!.saveAndValidate();
+    if (!isValid || _selectedTime == null) {
       if (_selectedTime == null) {
         ShadToaster.of(context).show(
           ShadToast.destructive(
@@ -239,7 +294,31 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
 
     final selectedDate =
         _formKey.currentState!.fields['Reminder Date']!.value as DateTime;
+    args.reminderDate = selectedDate;
     final selectedTime = _selectedTime!;
+
+    // If selected date is today, ensure the time is not in the past.
+    final now = DateTime.now();
+    final isToday =
+        selectedDate.year == now.year &&
+        selectedDate.month == now.month &&
+        selectedDate.day == now.day;
+    final nowTime = TimeOfDay.fromDateTime(now);
+    bool isBefore(TimeOfDay a, TimeOfDay b) {
+      return a.hour < b.hour ||
+          (a.hour == b.hour && a.minute < b.minute || a.minute == b.minute);
+    }
+
+    if (isToday && isBefore(selectedTime, nowTime)) {
+      ShadToaster.of(context).show(
+        ShadToast.destructive(
+          title: const Text('Invalid time'),
+          description: const Text('Selected time is in the past.'),
+        ),
+      );
+      return;
+    }
+
     final notificationId = args.documentType.hashCode.abs();
 
     final androidDetails = AndroidNotificationDetails(
@@ -290,7 +369,9 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
             '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
         expiryDate: args.expiryDate as DateTime,
         issuedDate: args.issueDate ?? DateTime.now(),
+        reminderDate: args.reminderDate as DateTime,
       );
+      // print('reminder data ${repo.reminderDate}');
       // print('Saving local reminder: $repo');
       await ReminderLocalDataSource().addReminder(repo);
       // await repo.createReminder(
@@ -337,7 +418,14 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
       '$expiryDate'
       'Z',
     );
-    return expiry.subtract(const Duration(days: 2));
+    final now = DateTime.now();
+    if (expiry.subtract(const Duration(days: 2)).isAfter(now)) {
+      return expiry.subtract(const Duration(days: 2));
+    } else if (expiry.subtract(const Duration(days: 1)).isAfter(now)) {
+      return expiry.subtract(const Duration(days: 1));
+    } else {
+      return null;
+    }
   }
 }
 

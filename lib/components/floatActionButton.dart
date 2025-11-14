@@ -99,7 +99,10 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
               builder: (context, _) {
                 final t = _expand.value;
                 // Wider for bigger buttons + more spacing
-                final targetWidth = (widget.actions.length * 80.0) + 10.0;
+                final extraWidth =
+                    MediaQuery.of(context).size.width - 160 - safeRight;
+                final targetWidth =
+                    (widget.actions.length * 50.0) + 10.0 + extraWidth * 0.2;
                 final width = targetWidth * t;
 
                 return IgnorePointer(
@@ -152,7 +155,7 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
           // Main circular FAB (bigger and perfectly circular)
           Padding(
             padding: EdgeInsets.only(
-              right: safeRight > 0 ? safeRight : 16,
+              right: safeRight > 0 ? safeRight : 12,
               bottom: safeBottom > 0 ? safeBottom : 16,
             ),
             child: Material(
@@ -255,8 +258,8 @@ class _GlassIconButton extends StatelessWidget {
         borderRadius: BorderRadius.circular(26),
         onTap: onTap,
         child: Container(
-          width: 60, // bigger button
-          height: 60,
+          width: 40, // bigger button
+          height: 40,
           alignment: Alignment.center,
           child: Icon(
             icon,

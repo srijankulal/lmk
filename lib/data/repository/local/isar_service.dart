@@ -1,6 +1,8 @@
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:lmk/data/models/local/local_reminder.dart';
+import 'package:lmk/data/models/local/local_user.dart';
 
 class IsarService {
   static Isar? _isar;
@@ -11,7 +13,7 @@ class IsarService {
     final dir = await getApplicationDocumentsDirectory();
 
     _isar = await Isar.open(
-      [ReminderLocalSchema],
+      [ReminderLocalSchema, UserLocalSchema],
       inspector: true,
       directory: dir.path,
     );

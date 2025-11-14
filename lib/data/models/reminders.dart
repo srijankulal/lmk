@@ -37,6 +37,7 @@ class ReminderModel {
   String? time;
   DateTime? expiryDate;
   DateTime? issuedDate;
+  DateTime? reminderDate;
   DateTime? setDate;
   bool? isEnabled;
   String? user;
@@ -52,6 +53,7 @@ class ReminderModel {
     this.time,
     this.expiryDate,
     this.issuedDate,
+    this.reminderDate,
     this.setDate,
     this.isEnabled,
     this.user,
@@ -72,6 +74,9 @@ class ReminderModel {
     issuedDate: json["issuedDate"] == null
         ? null
         : DateTime.parse(json["issuedDate"]),
+    reminderDate: json["reminderDate"] == null
+        ? null
+        : DateTime.parse(json["reminderDate"]),
     setDate: json["setDate"] == null ? null : DateTime.parse(json["setDate"]),
     isEnabled: json["isEnabled"],
     user: json["user"],
@@ -92,6 +97,7 @@ class ReminderModel {
     "time": time,
     "expiryDate": expiryDate?.toIso8601String(),
     "issuedDate": issuedDate?.toIso8601String(),
+    "reminderDate": reminderDate?.toIso8601String(),
     "setDate": setDate?.toIso8601String(),
     "isEnabled": isEnabled,
     "user": user,

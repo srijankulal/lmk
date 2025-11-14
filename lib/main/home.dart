@@ -1,5 +1,5 @@
 import 'dart:async';
-
+import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
@@ -10,6 +10,9 @@ import 'package:lmk/auth/services/google_auth.dart';
 import 'package:lmk/components/buildCard.dart';
 import 'package:lmk/components/floatActionButton.dart';
 import 'package:lmk/data/local/reminder_local.dart';
+import 'package:lmk/data/local/user_local.dart';
+import 'package:lmk/data/models/local/local_user.dart';
+import 'package:lmk/data/models/local/local_user.dart' as model;
 import 'package:lmk/data/models/post/post.dart';
 import 'package:lmk/data/repository/remote/get_reminders.dart';
 import 'package:lmk/data/repository/remote/post_repo.dart';
@@ -36,6 +39,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   String? token;
   StreamSubscription<InternetStatus>? _connectionSubscription;
   bool _isOnline = true;
+  model.UserLocal? _user;
+  String name = 'User';
+  String photoUrl =
+      "https://img.icons8.com/?size=100&id=85120&format=png&color=000000";
 
   @override
   void initState() {
@@ -51,8 +58,20 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     );
     _controller.forward();
     _initNotifications();
+    _load();
     //start listening to connectivity changes
     _subscribeToConnection();
+  }
+
+  Future<void> _load() async {
+    _user = await UserLocalDataSource().getUser();
+    if (!mounted) return;
+    setState(() {
+      name = _user?.name ?? "User";
+      photoUrl =
+          _user?.photoUrl ??
+          "https://img.icons8.com/?size=100&id=85120&format=png&color=000000";
+    });
   }
 
   void _subscribeToConnection() {
@@ -69,13 +88,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
       if (online != _isOnline) {
         setState(() => _isOnline = online);
-
         // Optional: toast on change
-        if (online) {
-          ShadToaster.of(
-            context,
-          ).show(ShadToast(title: const Text('Back online')));
-        } else {
+        if (!online) {
           ShadToaster.of(context).show(
             ShadToast.destructive(
               title: const Text('You are offline'),
@@ -106,15 +120,16 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               id: localReminder.id,
               title: localReminder.title,
               expiry_date: localReminder.expiryDate as DateTime,
+              reminderDate: localReminder.reminderDate as DateTime,
               time: _parseTimeOfDay(localReminder.time as String),
               index: localReminder.index as int,
               isEnabled: localReminder.isEnabled as bool,
-              issue_date: localReminder.issuedDate as DateTime,
+              issue_date: localReminder.issuedDate,
             ),
           )
           .toList();
     });
-    print("Loaded ${reminders.length} reminders from local storage.");
+    // print("Loaded ${reminders.length} reminders from local storage.");
   }
 
   TimeOfDay _parseTimeOfDay(String time) {
@@ -202,27 +217,38 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     );
   }
 
+  // Helper: combine reminderDate and time for comparisons/formatting
+  DateTime _combineReminderDateTime(Reminder r) {
+    final date = r.reminderDate ?? r.expiry_date;
+    return DateTime(
+      date.year,
+      date.month,
+      date.day,
+      r.time.hour,
+      r.time.minute,
+    );
+  }
+
+  // Helper: find the next upcoming reminder (enabled and in the future)
+  MapEntry<Reminder, DateTime>? _upcomingReminder() {
+    final now = DateTime.now();
+    final entries = reminders
+        .where((r) => r.isEnabled)
+        .map((r) => MapEntry(r, _combineReminderDateTime(r)))
+        .where((e) => e.value.isAfter(now))
+        .toList();
+    if (entries.isEmpty) return null;
+    entries.sort((a, b) => a.value.compareTo(b.value));
+    return entries.first;
+  }
+
+  String _formatDate(DateTime d) =>
+      '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
-    String name = "User";
-    String photoUrl = "";
+    final upcoming = _upcomingReminder();
 
-    if (user == null) {
-      WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, '/signIn');
-      });
-      // Return a loading indicator or an empty container while navigating.
-      return const Scaffold(
-        backgroundColor: AppColors.background,
-        body: Center(
-          child: SpinKitFadingCube(color: AppColors.primary, size: 25.0),
-        ),
-      );
-    } else {
-      name = user.displayName ?? "User";
-      photoUrl = user.photoURL ?? "";
-    }
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -236,30 +262,99 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                 padding: const EdgeInsets.only(bottom: 24),
                 child: Column(
                   children: [
-                    const SizedBox(height: 22),
-                    AvatarCard(
-                      name: name,
-                      imageUrl: photoUrl,
-                      onTap: () {
-                        AuthMethods().signOut();
-                        Navigator.pushReplacementNamed(context, '/signIn');
-                      },
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        !_isOnline
+                            ? IconButton(
+                                tooltip: _isOnline ? 'Online' : 'Offline',
+                                onPressed: () {},
+                                icon: AnimatedSwitcher(
+                                  duration: const Duration(milliseconds: 250),
+                                  switchInCurve: Curves.easeOut,
+                                  switchOutCurve: Curves.easeIn,
+                                  transitionBuilder: (child, anim) =>
+                                      FadeTransition(
+                                        opacity: anim,
+                                        child: ScaleTransition(
+                                          scale: anim,
+                                          child: child,
+                                        ),
+                                      ),
+                                  child: Icon(
+                                    Icons.link_off,
+                                    key: ValueKey<bool>(_isOnline),
+                                    color: AppColors.error,
+                                  ),
+                                ),
+                              )
+                            : const SizedBox(height: 48),
+                      ],
                     ),
-                    Padding(
-                      padding: const EdgeInsets.only(left: 20.0, top: 16.0),
-                      child: Align(
-                        alignment: Alignment.centerLeft,
-                        child: Text(
-                          "Your stuffs.",
-                          style: TextStyle(
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                            color: AppColors.textPrimary,
+
+                    // const SizedBox(height: 22),
+                    Transform.translate(
+                      offset: const Offset(0, -26),
+                      child: Column(
+                        children: [
+                          AvatarCard(
+                            name: name,
+                            imageUrl: photoUrl,
+                            onTap: () {
+                              AuthMethods().signOut();
+                              Navigator.pushReplacementNamed(
+                                context,
+                                '/signIn',
+                              );
+                            },
                           ),
-                        ),
+                          Padding(
+                            padding: const EdgeInsets.only(
+                              left: 20.0,
+                              top: 16.0,
+                            ),
+                            child: Align(
+                              alignment: Alignment.centerLeft,
+                              child: Text(
+                                "Your stuffs.",
+                                style: TextStyle(
+                                  fontSize: 24,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.textPrimary,
+                                ),
+                              ),
+                            ),
+                          ),
+                          if (upcoming != null)
+                            Padding(
+                              padding: const EdgeInsets.only(
+                                left: 20.0,
+                                top: 6.0,
+                              ),
+                              child: Align(
+                                alignment: Alignment.centerLeft,
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    const Icon(Icons.alarm, size: 16),
+                                    const SizedBox(width: 8),
+                                    Text(
+                                      'Next reminder: ${_formatDate(upcoming.value)} at ${upcoming.key.time.format(context)}',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: AppColors.textPrimary
+                                            .withOpacity(0.8),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                        ],
                       ),
                     ),
-                    const SizedBox(height: 22),
+
+                    // const SizedBox(height: 22),
                     // ShadButton(
                     //   backgroundColor: AppColors.primary,
                     //   child: const Text('Add New Document'),
@@ -273,131 +368,134 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
             ),
             Expanded(
               child: Transform.translate(
-                offset: const Offset(0, -32),
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.all(Radius.circular(36)),
-                  child: Stack(
-                    fit: StackFit.expand,
-                    children: [
-                      // Base gradient background (liquid-like)
-                      DecoratedBox(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              AppColors.background,
-                              AppColors.cardMist,
-                              AppColors.cardClay.withAlpha(85),
+                offset: const Offset(0, -16),
+                child: Stack(
+                  fit: StackFit.expand,
+                  children: [
+                    // Soft ambient glows
+                    IgnorePointer(
+                      ignoring: true,
+                      child: Stack(
+                        children: [
+                          Positioned(
+                            top: 100,
+                            right: -60,
+                            child: Container(
+                              width: 220,
+                              height: 220,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    AppColors.primary.withOpacity(0.18),
+                                    AppColors.primary.withOpacity(0.06),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.55, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            top: -40,
+                            left: -30,
+                            child: Container(
+                              width: 200,
+                              height: 200,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    AppColors.cardSage.withOpacity(0.18),
+                                    AppColors.cardSage.withOpacity(0.06),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.55, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: -30,
+                            right: -10,
+                            child: Container(
+                              width: 160,
+                              height: 160,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    AppColors.cardCoral.withOpacity(0.18),
+                                    AppColors.cardCoral.withOpacity(0.06),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.55, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                          Positioned(
+                            bottom: -50,
+                            left: -40,
+                            child: Container(
+                              width: 180,
+                              height: 180,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                gradient: RadialGradient(
+                                  colors: [
+                                    AppColors.cardAmber.withOpacity(0.18),
+                                    AppColors.cardAmber.withOpacity(0.06),
+                                    Colors.transparent,
+                                  ],
+                                  stops: const [0.0, 0.55, 1.0],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    // Glassy container for cards (matches GlassCard style)
+                    ClipRRect(
+                      borderRadius: BorderRadius.circular(20),
+                      child: BackdropFilter(
+                        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                        child: Container(
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(20),
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                AppColors.surface.withOpacity(0.32),
+                                AppColors.cardMist.withOpacity(0.25),
+                              ],
+                            ),
+                            border: Border.all(
+                              color: AppColors.border.withOpacity(0.3),
+                            ),
+                            boxShadow: const [
+                              BoxShadow(
+                                color: AppColors.shadow,
+                                blurRadius: 24,
+                                offset: Offset(0, 12),
+                                spreadRadius: 2,
+                              ),
                             ],
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
+                          ),
+                          child: BuildCard(
+                            reminders: reminders,
+                            onDelete: (int id) {
+                              setState(() {
+                                reminders.removeWhere((r) => r.id == id);
+                              });
+                            },
                           ),
                         ),
                       ),
-                      // Vibrant soft glows
-                      Positioned(
-                        top: 120,
-                        right: -80,
-                        child: Container(
-                          width: 260,
-                          height: 260,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                AppColors.primary.withOpacity(0.22),
-                                AppColors.primary.withOpacity(0.08),
-                                Colors.transparent,
-                              ],
-                              stops: const [0.0, 0.55, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        top: -60,
-                        left: -40,
-                        child: Container(
-                          width: 220,
-                          height: 220,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                AppColors.cardSage.withOpacity(0.22),
-                                AppColors.cardSage.withOpacity(0.08),
-                                Colors.transparent,
-                              ],
-                              stops: const [0.0, 0.55, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: -40,
-                        right: -20,
-                        child: Container(
-                          width: 180,
-                          height: 180,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                AppColors.cardCoral.withOpacity(0.22),
-                                AppColors.cardCoral.withOpacity(0.08),
-                                Colors.transparent,
-                              ],
-                              stops: const [0.0, 0.55, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-                      Positioned(
-                        bottom: -60,
-                        left: -50,
-                        child: Container(
-                          width: 200,
-                          height: 200,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            gradient: RadialGradient(
-                              colors: [
-                                AppColors.cardAmber.withAlpha(22),
-                                AppColors.cardAmber.withAlpha(8),
-                                Colors.transparent,
-                              ],
-                              stops: const [0.0, 0.55, 1.0],
-                            ),
-                          ),
-                        ),
-                      ),
-                      // Content
-                      Container(
-                        // subtle inner gradient for “glass” feel
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            begin: Alignment.topLeft,
-                            end: Alignment.bottomRight,
-                            colors: [
-                              AppColors.surface.withAlpha(12),
-                              AppColors.cardMist.withAlpha(8),
-                              Colors.transparent,
-                            ],
-                          ),
-                          border: Border.all(
-                            color: AppColors.border.withAlpha(12),
-                          ),
-                        ),
-                        child: BuildCard(
-                          reminders: reminders,
-                          onDelete: (int id) {
-                            setState(() {
-                              reminders.removeWhere((r) => r.id == id);
-                            });
-                          },
-                        ),
-                      ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -467,6 +565,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         imageQuality: 60, // 0-100 (lower = smaller)
       );
 
+      if (!mounted) return;
+
       if (image == null) {
         buildErrorToast(context);
         return;
@@ -477,7 +577,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       //   'Picked image size: $byteSize bytes (${(byteSize / 1024).toStringAsFixed(2)} KB)',
       // );
 
-      PostRepository postrepo = PostRepository();
+      PostRepository postRepo = PostRepository();
       final loading = SpinKitFadingCube(color: AppColors.primary, size: 25.0);
 
       showDialog(
@@ -515,19 +615,20 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         },
       );
 
-      DocData? docData = await postrepo.fetchDocData(img);
+      DocData? docData = await postRepo.fetchDocData(img);
 
-      if (context.mounted) {
-        Navigator.of(context).pop();
-      }
+      if (!mounted) return;
+      Navigator.of(context).pop();
 
       if (docData == null) {
+        if (!mounted) return;
         buildErrorToast(context);
         return;
       }
       Navigator.pushNamed(context, '/docForm', arguments: docData);
     } catch (e) {
       print("Error picking image: $e");
+      if (!mounted) return;
       buildErrorToast(context, source);
     }
   }
