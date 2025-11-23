@@ -6,10 +6,13 @@ import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:flutter_neumorphic_plus/flutter_neumorphic.dart';
 import 'package:flutter_slidable/flutter_slidable.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/reminder_local.dart';
 import 'package:lmk/data/models/local/local_reminder.dart';
+import 'package:lmk/data/models/local/pending_deletion.dart';
 import 'package:lmk/data/repository/local/isar_service.dart';
+import 'package:lmk/data/repository/remote/delete_reminder.dart';
 import 'package:lmk/main.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -153,10 +156,29 @@ class _GlossyReminderCard extends StatefulWidget {
 
 class _GlossyReminderCardState extends State<_GlossyReminderCard> {
   static final List<Color> cardColors = [
+    AppColors.cardMoss,
     AppColors.cardSage,
     AppColors.cardClay,
+    AppColors.cardDrift,
+    AppColors.cardMist,
     AppColors.cardAmber,
     AppColors.cardCoral,
+    // Pastel card palette
+    AppColors.cardSky,
+    AppColors.cardMint,
+    AppColors.cardApricot,
+    AppColors.cardPink,
+    AppColors.cardLavender,
+    AppColors.cardLightBlue,
+    AppColors.cardSoftYellow,
+    AppColors.cardPeach,
+    AppColors.cardMauve,
+    AppColors.cardPeriwinkle,
+    AppColors.cardLightGreen,
+    AppColors.cardAqua,
+    AppColors.cardRose,
+    AppColors.cardLemon,
+    AppColors.cardStone,
   ];
 
   bool _isPressed = false;
@@ -963,7 +985,7 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
                                     setState(() {
                                       _title = title;
                                       _time = selectedTime;
-                                      _expiryDate = selectedDate;
+                                      _expiryDate = widget.reminder.expiry_date;
                                       _reminderDate =
                                           selectedDate; // display reminder date too
                                     });
@@ -1075,49 +1097,62 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
                                     ),
                                   );
 
-                                  bool deleted = await ReminderLocalDataSource()
-                                      .deleteReminder(widget.reminder.id);
+                                  final hasInternet = await InternetConnection()
+                                      .hasInternetAccess;
+                                  final isar = await IsarService().db;
+
+                                  if (hasInternet) {
+                                    try {
+                                      await DeleteReminder().deleteReminder(
+                                        widget.reminder.index.toString(),
+                                      );
+                                      await ReminderLocalDataSource()
+                                          .deleteReminder(widget.reminder.id);
+                                    } catch (e) {
+                                      print("Remote delete failed: $e");
+                                    }
+                                  } else {
+                                    await isar.writeTxn(() async {
+                                      await isar.pendingDeletions.put(
+                                        PendingDeletion()
+                                          ..remoteIndex = widget.reminder.index
+                                              .toString()
+                                          ..deletedAt = DateTime.now(),
+                                      );
+                                      await isar.reminderLocals.delete(
+                                        widget.reminder.id,
+                                      );
+                                    });
+                                  }
 
                                   Navigator.of(
                                     context,
                                     rootNavigator: true,
                                   ).pop();
 
-                                  if (deleted) {
-                                    await flutterLocalNotificationsPlugin
-                                        .cancel(widget.reminder.index);
-                                    widget.onDelete?.call(widget.reminder.id);
-                                    Navigator.of(context).pop(true);
-                                    ShadToaster.of(context).show(
-                                      const ShadToast(
-                                        duration: Duration(milliseconds: 1500),
-                                        backgroundColor: AppColors.success,
-                                        title: Text(
-                                          'Reminder Deleted',
-                                          style: TextStyle(
-                                            color: AppColors.textPrimary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
+                                  await flutterLocalNotificationsPlugin.cancel(
+                                    widget.reminder.index,
+                                  );
+                                  widget.onDelete?.call(widget.reminder.id);
+                                  Navigator.of(context).pop(true);
+
+                                  ShadToaster.of(context).show(
+                                    ShadToast(
+                                      duration: const Duration(
+                                        milliseconds: 1500,
+                                      ),
+                                      backgroundColor: AppColors.success,
+                                      title: Text(
+                                        hasInternet
+                                            ? 'Reminder Deleted'
+                                            : 'Deleted (Saved for Sync)',
+                                        style: const TextStyle(
+                                          color: AppColors.textPrimary,
+                                          fontWeight: FontWeight.bold,
                                         ),
                                       ),
-                                    );
-                                  } else {
-                                    Navigator.of(context).pop(false);
-                                    ShadToaster.of(context).show(
-                                      ShadToast.destructive(
-                                        duration: const Duration(
-                                          milliseconds: 1500,
-                                        ),
-                                        title: const Text(
-                                          'Failed to Delete Reminder',
-                                          style: TextStyle(
-                                            color: AppColors.textPrimary,
-                                            fontWeight: FontWeight.bold,
-                                          ),
-                                        ),
-                                      ),
-                                    );
-                                  }
+                                    ),
+                                  );
                                 },
                               ),
                             ],

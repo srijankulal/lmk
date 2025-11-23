@@ -1,6 +1,8 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/user_local.dart';
 import 'package:lmk/data/models/local/local_user.dart';
 import 'package:lmk/data/repository/local/isar_service.dart';
@@ -72,7 +74,7 @@ class AuthMethods {
       print("Google Sign-In email: $email");
       final String photoUrl = googleUser.photoUrl ?? "";
       print("Google Sign-In photoUrl: $photoUrl");
-
+      final loading = SpinKitFadingCube(color: AppColors.primary, size: 25.0);
       // Create credential for Firebase
       final credential = GoogleAuthProvider.credential(
         idToken: idToken,
@@ -100,8 +102,15 @@ class AuthMethods {
 
         final String? idTokenFirebase = await user.getIdToken();
         if (idTokenFirebase != null) {
+          // Show loading while registering/saving
+          if (context.mounted) {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (_) => Center(child: loading),
+            );
+          }
           try {
-            // Call your backend API to register the user in your database
             await UserRegister().registerUser(idTokenFirebase, userDetails);
             print("User registered on backend successfully.");
             final details = UserLocal()
@@ -109,21 +118,25 @@ class AuthMethods {
               ..name = user.displayName ?? "No Name"
               ..photoUrl = user.photoURL ?? "";
             UserLocalDataSource().saveUser(details);
+            print("User details saved locally: $details");
           } catch (e) {
-            // Handle potential errors from your backend, e.g., user already exists
             print("Error registering user on backend: $e");
-            // You might not want to throw an error here if user already existing
-            // is not considered a sign-in failure.
+          } finally {
+            if (context.mounted && Navigator.canPop(context)) {
+              Navigator.pop(context); // dismiss loading
+            }
           }
         }
-        if (!context.mounted)
+        if (!context.mounted) {
+          print("Context is not mounted, cannot navigate.");
+          return userCredential;
+        }
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => Launch()),
         );
+        return userCredential;
       }
-
-      return userCredential;
     } on GoogleSignInException catch (e) {
       print("GoogleSignInException: ${e.code} — ${e.description}");
       rethrow;

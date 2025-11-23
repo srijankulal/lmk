@@ -3,6 +3,7 @@ import 'package:isar/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:lmk/data/models/local/local_reminder.dart';
 import 'package:lmk/data/models/local/local_user.dart';
+import 'package:lmk/data/models/local/pending_deletion.dart';
 
 class IsarService {
   static Isar? _isar;
@@ -13,7 +14,7 @@ class IsarService {
     final dir = await getApplicationDocumentsDirectory();
 
     _isar = await Isar.open(
-      [ReminderLocalSchema, UserLocalSchema],
+      [ReminderLocalSchema, UserLocalSchema, PendingDeletionSchema],
       inspector: true,
       directory: dir.path,
     );

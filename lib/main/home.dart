@@ -11,11 +11,14 @@ import 'package:lmk/components/buildCard.dart';
 import 'package:lmk/components/floatActionButton.dart';
 import 'package:lmk/data/local/reminder_local.dart';
 import 'package:lmk/data/local/user_local.dart';
+import 'package:lmk/data/models/local/local_reminder.dart';
 import 'package:lmk/data/models/local/local_user.dart';
 import 'package:lmk/data/models/local/local_user.dart' as model;
 import 'package:lmk/data/models/post/post.dart';
+import 'package:lmk/data/repository/remote/create_reminder.dart';
 import 'package:lmk/data/repository/remote/get_reminders.dart';
 import 'package:lmk/data/repository/remote/post_repo.dart';
+import 'package:lmk/services/sync_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/avatar_card.dart';
 import 'package:lmk/components/colours/colours.dart';
@@ -27,8 +30,6 @@ class Home extends StatefulWidget {
   @override
   State<Home> createState() => _HomeState();
 }
-
-// ... (keep the reminders list as is)
 
 class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   late AnimationController _controller;
@@ -63,33 +64,52 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     _subscribeToConnection();
   }
 
+  Future<void> _initToken() async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      final t = await user.getIdToken();
+      if (!mounted) return;
+      setState(() => token = t);
+      await _loadReminders();
+    }
+  }
+
   Future<void> _load() async {
-    _user = await UserLocalDataSource().getUser();
-    if (!mounted) return;
-    setState(() {
-      name = _user?.name ?? "User";
-      photoUrl =
-          _user?.photoUrl ??
-          "https://img.icons8.com/?size=100&id=85120&format=png&color=000000";
-    });
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+    if (uid != null) {
+      try {
+        final userLocal = await UserLocalDataSource().getUser();
+        if (!mounted) return;
+        setState(() {
+          _user = userLocal;
+          name = userLocal?.name ?? name;
+          photoUrl = userLocal?.photoUrl ?? photoUrl;
+        });
+      } catch (e) {
+        // Silently ignore user load errors
+      }
+    }
+    if (token != null) {
+      await _loadReminders();
+    }
   }
 
   void _subscribeToConnection() {
-    // set initial state
     InternetConnection().hasInternetAccess.then((online) {
       if (mounted) setState(() => _isOnline = online);
     });
 
     _connectionSubscription = InternetConnection().onStatusChange.listen((
       InternetStatus status,
-    ) {
+    ) async {
       final online = status == InternetStatus.connected;
       if (!mounted) return;
 
       if (online != _isOnline) {
         setState(() => _isOnline = online);
-        // Optional: toast on change
-        if (!online) {
+        if (online) {
+          await SyncService().syncAll();
+        } else {
           ShadToaster.of(context).show(
             ShadToast.destructive(
               title: const Text('You are offline'),
@@ -100,11 +120,17 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
       }
     });
   }
-
-  Future<void> _initToken() async {
-    token = await FirebaseAuth.instance.currentUser?.getIdToken();
-    await _loadReminders();
-  }
+  //       } else {
+  //         ShadToaster.of(context).show(
+  //           ShadToast.destructive(
+  //             title: const Text('You are offline'),
+  //             description: const Text('Some actions will be unavailable.'),
+  //           ),
+  //         );
+  //       }
+  //     }
+  //   });
+  // }
 
   Future<void> _loadReminders() async {
     print("Fetching reminders with token: $token");

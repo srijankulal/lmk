@@ -30,23 +30,30 @@ class AppColors {
   static const Color disabled = Color(0xFF9C9C9C);
 
   // 🌿 Card Colors — matches warm beige & dark green-gray
-  static const Color cardMoss = Color(
-    0xFF616C5F,
-  ); // muted moss green — subtle and rich
+  static const Color cardMoss = Color(0xFF616C5F); // muted moss green — subtle and rich
   static const Color cardSage = Color(0xFF8FA58A); // soft natural green tone
   static const Color cardClay = Color(0xFFE0CBB2); // light earthy beige
-  static const Color cardDrift = Color(
-    0xFFDAD6C8,
-  ); // calm neutral (already used for surface)
-  static const Color cardMist = Color(
-    0xFFECE8DA,
-  ); // pale warm tint for lighter cards
-  static const Color cardAmber = Color(
-    0xFFFFB77A,
-  ); // warm, friendly orange tone
-  static const Color cardCoral = Color(
-    0xFFFF8B66,
-  ); // brighter variant of your primary
+  static const Color cardDrift = Color(0xFFDAD6C8); // calm neutral (already used for surface)
+  static const Color cardMist = Color(0xFFECE8DA); // pale warm tint for lighter cards
+  static const Color cardAmber = Color(0xFFFFB77A); // warm, friendly orange tone
+  static const Color cardCoral = Color(0xFFFF8B66); // brighter variant of your primary
+
+  // Pastel card palette
+  static const Color cardSky = Color(0xFFBDE3FF); // sky
+  static const Color cardMint = Color(0xFFC7F9CC); // mint
+  static const Color cardApricot = Color(0xFFFFE0B2); // apricot
+  static const Color cardPink = Color(0xFFF8BBD0); // pink
+  static const Color cardLavender = Color(0xFFDAD4FF); // lavender
+  static const Color cardLightBlue = Color(0xFFB3E5FC); // light blue
+  static const Color cardSoftYellow = Color(0xFFFFF59D); // soft yellow
+  static const Color cardPeach = Color(0xFFFFCCBC); // peach
+  static const Color cardMauve = Color(0xFFE1BEE7); // mauve
+  static const Color cardPeriwinkle = Color(0xFFC5CAE9); // periwinkle
+  static const Color cardLightGreen = Color(0xFFDCEDC8); // light green
+  static const Color cardAqua = Color(0xFFB2EBF2); // aqua
+  static const Color cardRose = Color(0xFFFFD6E8); // rose
+  static const Color cardLemon = Color(0xFFFFF1B6); // lemon
+  static const Color cardStone = Color(0xFFD7CCC8); // stone
   // 🖋 Card Content Colors
   static const Color cardTextDark = Color(0xFF1E1E1E); // for light cards
   static const Color cardTextLight = Color(0xFFFFFFFF); // for dark cards

@@ -2,6 +2,7 @@ import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/reminder_local.dart';
 import 'package:lmk/data/models/local/local_reminder.dart';
@@ -357,11 +358,9 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
 
     final user = FirebaseAuth.instance.currentUser;
     final uid = user?.uid ?? '';
-    // final token = await user?.getIdToken() ?? '';
-    // final repo = CreateReminderRepository();
 
     try {
-      final repo = ReminderLocal(
+      final repoLocal = ReminderLocal(
         userId: uid,
         title: 'Reminder for ${args.documentType}',
         index: notificationId,
@@ -373,7 +372,33 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
       );
       // print('reminder data ${repo.reminderDate}');
       // print('Saving local reminder: $repo');
-      await ReminderLocalDataSource().addReminder(repo);
+      await ReminderLocalDataSource().addReminder(repoLocal);
+      final hasInternet = await InternetConnection().hasInternetAccess;
+      if (hasInternet) {
+        final token = await user?.getIdToken() ?? '';
+        final repo = CreateReminderRepository();
+        await repo.createReminder(
+          token: token,
+          uid: uid,
+          title: 'Reminder for ${args.documentType}',
+          time:
+              '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+          expiryDate: args.expiryDate as DateTime,
+          setDate: DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            selectedTime.hour,
+            selectedTime.minute,
+          ),
+          isEnabled: true,
+          index: notificationId,
+          issuedDate: args.issueDate ?? DateTime.now(),
+        );
+        await ReminderLocalDataSource().updateReminder(
+          repoLocal..synced = true,
+        );
+      }
       // await repo.createReminder(
       //   token: token,
       //   uid: uid,
