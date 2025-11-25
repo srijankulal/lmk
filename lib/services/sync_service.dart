@@ -5,6 +5,7 @@ import 'package:lmk/data/models/local/pending_deletion.dart';
 import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/data/repository/remote/delete_reminder.dart';
 import 'package:lmk/data/repository/remote/create_reminder.dart';
+import 'package:lmk/data/repository/remote/update_reminder.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
 class SyncService {
@@ -35,59 +36,82 @@ class SyncService {
         return;
       }
 
-      // --- STEP 1: Sync Pending Creations ---
+      // --- STEP 1: Sync Pending Creations & Updates ---
       final unsyncedReminders = await isar.reminderLocals
           .filter()
           .syncedEqualTo(false)
           .findAll();
 
       if (unsyncedReminders.isNotEmpty) {
-        print("Syncing ${unsyncedReminders.length} pending creations...");
-        
+        print("Syncing ${unsyncedReminders.length} pending items...");
+
         for (final reminder in unsyncedReminders) {
           try {
-            await CreateReminderRepository().createReminder(
-              uid: reminder.userId,
-              title: reminder.title,
-              time: reminder.time!,
-              expiryDate: reminder.expiryDate!,
-              setDate: reminder.updatedAt!,
-              isEnabled: reminder.isEnabled!,
-              index: reminder.index!,
-              token: token,
-              issuedDate: reminder.issuedDate!,
-            );
-            
-            // Mark as synced ONLY after success
-            // We need to fetch the object again or use a copy to update because Isar objects are immutable outside write txn if not managed properly? 
-            // Actually Isar objects are just Dart objects.
-            
-            await isar.writeTxn(() async {
-              // Fetch fresh object to avoid version conflicts if any
-              final freshReminder = await isar.reminderLocals.get(reminder.id);
-              if (freshReminder != null) {
-                freshReminder.synced = true;
-                await isar.reminderLocals.put(freshReminder);
-              }
-            });
-            print("✅ Synced creation: ${reminder.title}");
+            if (reminder.isUploaded == false) {
+              // CREATE: Not uploaded yet
+              await CreateReminderRepository().createReminder(
+                uid: reminder.userId,
+                title: reminder.title,
+                time: reminder.time!,
+                expiryDate: reminder.expiryDate!,
+                setDate: reminder.updatedAt!,
+                isEnabled: reminder.isEnabled!,
+                index: reminder.index!,
+                token: token,
+                issuedDate: reminder.issuedDate!,
+              );
+
+              await isar.writeTxn(() async {
+                final freshReminder = await isar.reminderLocals.get(
+                  reminder.id,
+                );
+                if (freshReminder != null) {
+                  freshReminder.synced = true;
+                  freshReminder.isUploaded = true; // ✅ Mark as uploaded
+                  await isar.reminderLocals.put(freshReminder);
+                }
+              });
+              print("✅ Synced creation: ${reminder.title}");
+            } else {
+              // UPDATE: Already uploaded, so update
+              await UpdateReminder().updateReminder(
+                index: reminder.index!,
+                title: reminder.title,
+                time: reminder.time,
+                expiryDate: reminder.expiryDate,
+                setDate: reminder.updatedAt,
+                isEnabled: reminder.isEnabled,
+                issuedDate: reminder.issuedDate,
+              );
+
+              await isar.writeTxn(() async {
+                final freshReminder = await isar.reminderLocals.get(
+                  reminder.id,
+                );
+                if (freshReminder != null) {
+                  freshReminder.synced = true;
+                  await isar.reminderLocals.put(freshReminder);
+                }
+              });
+              print("✅ Synced update: ${reminder.title}");
+            }
           } catch (e) {
-            print("❌ Failed to sync creation for ${reminder.title}: $e");
+            print("❌ Failed to sync item ${reminder.title}: $e");
           }
         }
       }
 
       // --- STEP 2: Sync Pending Deletions ---
       final pendingDeletions = await isar.pendingDeletions.where().findAll();
-      
+
       if (pendingDeletions.isNotEmpty) {
         print("Syncing ${pendingDeletions.length} pending deletions...");
-        
+
         for (final item in pendingDeletions) {
           try {
             // Call remote delete API
             await DeleteReminder().deleteReminder(item.remoteIndex);
-            
+
             // Remove from pending queue after success
             await isar.writeTxn(() async {
               await isar.pendingDeletions.delete(item.id);
@@ -98,7 +122,6 @@ class SyncService {
           }
         }
       }
-
     } catch (e) {
       print("Error during sync: $e");
     } finally {

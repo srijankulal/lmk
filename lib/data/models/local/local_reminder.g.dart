@@ -37,20 +37,20 @@ const ReminderLocalSchema = CollectionSchema(
       name: r'isEnabled',
       type: IsarType.bool,
     ),
-    r'issuedDate': PropertySchema(
+    r'isUploaded': PropertySchema(
       id: 4,
+      name: r'isUploaded',
+      type: IsarType.bool,
+    ),
+    r'issuedDate': PropertySchema(
+      id: 5,
       name: r'issuedDate',
       type: IsarType.dateTime,
     ),
     r'reminderDate': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'reminderDate',
       type: IsarType.dateTime,
-    ),
-    r'remoteId': PropertySchema(
-      id: 6,
-      name: r'remoteId',
-      type: IsarType.string,
     ),
     r'synced': PropertySchema(
       id: 7,
@@ -99,12 +99,6 @@ int _reminderLocalEstimateSize(
 ) {
   var bytesCount = offsets.last;
   {
-    final value = object.remoteId;
-    if (value != null) {
-      bytesCount += 3 + value.length * 3;
-    }
-  }
-  {
     final value = object.time;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
@@ -125,9 +119,9 @@ void _reminderLocalSerialize(
   writer.writeDateTime(offsets[1], object.expiryDate);
   writer.writeLong(offsets[2], object.index);
   writer.writeBool(offsets[3], object.isEnabled);
-  writer.writeDateTime(offsets[4], object.issuedDate);
-  writer.writeDateTime(offsets[5], object.reminderDate);
-  writer.writeString(offsets[6], object.remoteId);
+  writer.writeBool(offsets[4], object.isUploaded);
+  writer.writeDateTime(offsets[5], object.issuedDate);
+  writer.writeDateTime(offsets[6], object.reminderDate);
   writer.writeBool(offsets[7], object.synced);
   writer.writeString(offsets[8], object.time);
   writer.writeString(offsets[9], object.title);
@@ -146,10 +140,10 @@ ReminderLocal _reminderLocalDeserialize(
     id: id,
     index: reader.readLongOrNull(offsets[2]),
     isEnabled: reader.readBoolOrNull(offsets[3]),
-    issuedDate: reader.readDateTimeOrNull(offsets[4]),
-    reminderDate: reader.readDateTimeOrNull(offsets[5]),
-    remoteId: reader.readStringOrNull(offsets[6]),
-    synced: reader.readBoolOrNull(offsets[7]) ?? false,
+    isUploaded: reader.readBoolOrNull(offsets[4]),
+    issuedDate: reader.readDateTimeOrNull(offsets[5]),
+    reminderDate: reader.readDateTimeOrNull(offsets[6]),
+    synced: reader.readBoolOrNull(offsets[7]),
     time: reader.readStringOrNull(offsets[8]),
     title: reader.readString(offsets[9]),
     updatedAt: reader.readDateTimeOrNull(offsets[10]),
@@ -175,13 +169,13 @@ P _reminderLocalDeserializeProp<P>(
     case 3:
       return (reader.readBoolOrNull(offset)) as P;
     case 4:
-      return (reader.readDateTimeOrNull(offset)) as P;
+      return (reader.readBoolOrNull(offset)) as P;
     case 5:
       return (reader.readDateTimeOrNull(offset)) as P;
     case 6:
-      return (reader.readStringOrNull(offset)) as P;
+      return (reader.readDateTimeOrNull(offset)) as P;
     case 7:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
+      return (reader.readBoolOrNull(offset)) as P;
     case 8:
       return (reader.readStringOrNull(offset)) as P;
     case 9:
@@ -578,6 +572,34 @@ extension ReminderLocalQueryFilter
   }
 
   QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
+      isUploadedIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'isUploaded',
+      ));
+    });
+  }
+
+  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
+      isUploadedIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'isUploaded',
+      ));
+    });
+  }
+
+  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
+      isUploadedEqualTo(bool? value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isUploaded',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
       issuedDateIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
@@ -726,161 +748,25 @@ extension ReminderLocalQueryFilter
   }
 
   QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdIsNull() {
+      syncedIsNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNull(
-        property: r'remoteId',
+        property: r'synced',
       ));
     });
   }
 
   QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdIsNotNull() {
+      syncedIsNotNull() {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(const FilterCondition.isNotNull(
-        property: r'remoteId',
+        property: r'synced',
       ));
     });
   }
 
   QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdEqualTo(
-    String? value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdGreaterThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        include: include,
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdLessThan(
-    String? value, {
-    bool include = false,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.lessThan(
-        include: include,
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdBetween(
-    String? lower,
-    String? upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.between(
-        property: r'remoteId',
-        lower: lower,
-        includeLower: includeLower,
-        upper: upper,
-        includeUpper: includeUpper,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdStartsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.startsWith(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdEndsWith(
-    String value, {
-    bool caseSensitive = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.endsWith(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdContains(String value, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.contains(
-        property: r'remoteId',
-        value: value,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdMatches(String pattern, {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.matches(
-        property: r'remoteId',
-        wildcard: pattern,
-        caseSensitive: caseSensitive,
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.equalTo(
-        property: r'remoteId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      remoteIdIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addFilterCondition(FilterCondition.greaterThan(
-        property: r'remoteId',
-        value: '',
-      ));
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterFilterCondition>
-      syncedEqualTo(bool value) {
+      syncedEqualTo(bool? value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'synced',
@@ -1448,6 +1334,19 @@ extension ReminderLocalQuerySortBy
     });
   }
 
+  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy> sortByIsUploaded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUploaded', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy>
+      sortByIsUploadedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUploaded', Sort.desc);
+    });
+  }
+
   QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy> sortByIssuedDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'issuedDate', Sort.asc);
@@ -1472,19 +1371,6 @@ extension ReminderLocalQuerySortBy
       sortByReminderDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderDate', Sort.desc);
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy> sortByRemoteId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'remoteId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy>
-      sortByRemoteIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'remoteId', Sort.desc);
     });
   }
 
@@ -1615,6 +1501,19 @@ extension ReminderLocalQuerySortThenBy
     });
   }
 
+  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy> thenByIsUploaded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUploaded', Sort.asc);
+    });
+  }
+
+  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy>
+      thenByIsUploadedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isUploaded', Sort.desc);
+    });
+  }
+
   QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy> thenByIssuedDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'issuedDate', Sort.asc);
@@ -1639,19 +1538,6 @@ extension ReminderLocalQuerySortThenBy
       thenByReminderDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'reminderDate', Sort.desc);
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy> thenByRemoteId() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'remoteId', Sort.asc);
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QAfterSortBy>
-      thenByRemoteIdDesc() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addSortBy(r'remoteId', Sort.desc);
     });
   }
 
@@ -1743,6 +1629,12 @@ extension ReminderLocalQueryWhereDistinct
     });
   }
 
+  QueryBuilder<ReminderLocal, ReminderLocal, QDistinct> distinctByIsUploaded() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isUploaded');
+    });
+  }
+
   QueryBuilder<ReminderLocal, ReminderLocal, QDistinct> distinctByIssuedDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'issuedDate');
@@ -1753,13 +1645,6 @@ extension ReminderLocalQueryWhereDistinct
       distinctByReminderDate() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'reminderDate');
-    });
-  }
-
-  QueryBuilder<ReminderLocal, ReminderLocal, QDistinct> distinctByRemoteId(
-      {bool caseSensitive = true}) {
-    return QueryBuilder.apply(this, (query) {
-      return query.addDistinctBy(r'remoteId', caseSensitive: caseSensitive);
     });
   }
 
@@ -1830,6 +1715,12 @@ extension ReminderLocalQueryProperty
     });
   }
 
+  QueryBuilder<ReminderLocal, bool?, QQueryOperations> isUploadedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isUploaded');
+    });
+  }
+
   QueryBuilder<ReminderLocal, DateTime?, QQueryOperations>
       issuedDateProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -1844,13 +1735,7 @@ extension ReminderLocalQueryProperty
     });
   }
 
-  QueryBuilder<ReminderLocal, String?, QQueryOperations> remoteIdProperty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.addPropertyName(r'remoteId');
-    });
-  }
-
-  QueryBuilder<ReminderLocal, bool, QQueryOperations> syncedProperty() {
+  QueryBuilder<ReminderLocal, bool?, QQueryOperations> syncedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'synced');
     });

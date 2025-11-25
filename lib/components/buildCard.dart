@@ -1,4 +1,5 @@
 // filepath: c:\Codes\Projects\lmk\lib\components\buildCard.dart
+
 import 'dart:math';
 import 'dart:ui';
 import 'package:flutter/material.dart';
@@ -13,6 +14,7 @@ import 'package:lmk/data/models/local/local_reminder.dart';
 import 'package:lmk/data/models/local/pending_deletion.dart';
 import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/data/repository/remote/delete_reminder.dart';
+import 'package:lmk/data/repository/remote/update_reminder.dart';
 import 'package:lmk/main.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -29,6 +31,7 @@ class Reminder {
   final int index;
   final bool isEnabled;
   final DateTime issue_date;
+  bool isSynced;
 
   Reminder({
     required this.userId,
@@ -39,6 +42,7 @@ class Reminder {
     this.reminderDate,
     required this.index,
     required this.isEnabled,
+    required this.isSynced,
     DateTime? issue_date,
   }) : issue_date = issue_date ?? DateTime(0, 0, 0);
 }
@@ -366,59 +370,28 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
         onTapCancel: () => setState(() => _isPressed = false),
         onTap: () => _showEditDialog(context),
         child: AnimatedScale(
-          scale: _isPressed ? 0.97 : 1.0,
+          scale: _isPressed ? 0.98 : 1.0,
           duration: const Duration(milliseconds: 140),
           curve: Curves.easeOut,
           child: Container(
             decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(24),
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  _cardColor.withOpacity(_isEnabled ? 0.9 : 0.5),
-                  _cardColor.withOpacity(_isEnabled ? 0.8 : 0.4),
-                ],
-              ),
-              border: Border.all(
-                color: Colors.white.withOpacity(0.15),
-                width: 1.5,
-              ),
+              color: _cardColor, // Restored color
+              borderRadius: BorderRadius.circular(28),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withOpacity(0.08),
-                  blurRadius: 16,
-                  offset: const Offset(0, 8),
+                  color: Colors.black.withOpacity(0.05),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
                 BoxShadow(
-                  color: _cardColor.withOpacity(0.15),
-                  blurRadius: 12,
-                  spreadRadius: -4,
-                  offset: const Offset(0, 4),
+                  color: Colors.white.withOpacity(0.8),
+                  blurRadius: 10,
+                  offset: const Offset(-4, -4),
                 ),
               ],
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(24),
-              child: BackdropFilter(
-                filter: ImageFilter.blur(sigmaX: 6, sigmaY: 6),
-                child: Container(
-                  decoration: BoxDecoration(
-                    borderRadius: BorderRadius.circular(24),
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        Colors.white.withOpacity(0.12),
-                        Colors.white.withOpacity(0.05),
-                      ],
-                    ),
-                  ),
-                  padding: const EdgeInsets.all(20),
-                  child: _buildCardContent(context),
-                ),
-              ),
-            ),
+            padding: const EdgeInsets.all(20),
+            child: _buildCardContent(context),
           ),
         ),
       ),
@@ -437,9 +410,7 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
               child: Text(
                 _title,
                 style: TextStyle(
-                  color: AppColors.textPrimary.withOpacity(
-                    _isEnabled ? 1.0 : 0.5,
-                  ),
+                  color: Colors.black87.withOpacity(_isEnabled ? 1.0 : 0.5),
                   fontSize: 20,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.5,
@@ -452,11 +423,11 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
             const SizedBox(width: 12),
             Container(
               decoration: BoxDecoration(
-                color: Colors.white.withOpacity(0.2),
+                color: Colors.grey.withOpacity(0.1),
                 borderRadius: BorderRadius.circular(20),
                 border: Border.all(
-                  color: Colors.white.withOpacity(0.25),
-                  width: 1.5,
+                  color: Colors.grey.withOpacity(0.2),
+                  width: 1.0,
                 ),
               ),
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -465,18 +436,14 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
                 children: [
                   Icon(
                     Icons.access_time_rounded,
-                    color: AppColors.textPrimary.withOpacity(
-                      _isEnabled ? 1.0 : 0.5,
-                    ),
+                    color: Colors.black54.withOpacity(_isEnabled ? 1.0 : 0.5),
                     size: 18,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     _time.format(context),
                     style: TextStyle(
-                      color: AppColors.textPrimary.withOpacity(
-                        _isEnabled ? 1.0 : 0.5,
-                      ),
+                      color: Colors.black87.withOpacity(_isEnabled ? 1.0 : 0.5),
                       fontWeight: FontWeight.bold,
                       fontSize: 15,
                     ),
@@ -617,9 +584,9 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
                   borderRadius: BorderRadius.circular(14),
                   color: _isEnabled
                       ? AppColors.success.withOpacity(0.8)
-                      : Colors.white.withOpacity(0.3),
+                      : Colors.grey.withOpacity(0.3),
                   border: Border.all(
-                    color: Colors.white.withOpacity(0.3),
+                    color: Colors.grey.withOpacity(0.2),
                     width: 1.5,
                   ),
                 ),
@@ -654,7 +621,7 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
   }) {
     return Container(
       decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.12),
+        color: Colors.grey.withOpacity(0.1),
         borderRadius: BorderRadius.circular(12),
       ),
       padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -663,14 +630,14 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
         children: [
           Icon(
             icon,
-            color: AppColors.textSecondary.withOpacity(_isEnabled ? 1.0 : 0.5),
+            color: Colors.black54.withOpacity(_isEnabled ? 1.0 : 0.5),
             size: 16,
           ),
           const SizedBox(width: 8),
           Text(
             '$label ${date.toLocal().toString().split(' ')[0]}',
             style: TextStyle(
-              color: AppColors.textPrimary.withOpacity(_isEnabled ? 0.9 : 0.5),
+              color: Colors.black87.withOpacity(_isEnabled ? 0.9 : 0.5),
               fontSize: 14,
               fontWeight: FontWeight.w600,
             ),
@@ -683,11 +650,10 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
   void _showEditDialog(BuildContext context) {
     final _editFormKey = GlobalKey<ShadFormState>();
     TimeOfDay selectedTime = _time;
-    DateTime selectedDate = DateTime(
-      _expiryDate.year,
-      _expiryDate.month,
-      _expiryDate.day,
-    );
+    // Use existing reminder date if available, otherwise fallback to expiry date
+    DateTime selectedDate =
+        _reminderDate ??
+        DateTime(_expiryDate.year, _expiryDate.month, _expiryDate.day);
     String title = _title;
 
     showGeneralDialog(
@@ -930,23 +896,68 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
                                     'Updating reminder to: $title at $selectedTime on $selectedDate',
                                   );
 
-                                  // Update DB first
-                                  await ReminderLocalDataSource().updateReminder(
-                                    ReminderLocal(
-                                      userId: widget.reminder.userId,
-                                      id: widget.reminder.id,
-                                      title: title,
-                                      index: widget.reminder.index,
-                                      issuedDate: widget.reminder.issue_date,
-                                      time:
-                                          "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}",
-                                      expiryDate: widget.reminder.expiry_date,
-                                      reminderDate: selectedDate,
+                                  final hasInternet = await InternetConnection()
+                                      .hasInternetAccess;
 
-                                      isEnabled: _isEnabled,
-                                    ),
-                                  );
+                                  // Track sync status locally
+                                  bool isSynced = widget.reminder.isSynced;
 
+                                  if (hasInternet) {
+                                    try {
+                                      String
+                                      res = await UpdateReminder().updateReminder(
+                                        title: title,
+                                        time:
+                                            "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}",
+                                        expiryDate: widget.reminder.expiry_date,
+                                        setDate: selectedDate,
+                                        isEnabled: _isEnabled,
+                                        index: widget.reminder.index,
+                                        issuedDate: widget.reminder.issue_date,
+                                      );
+                                      print("Remote update response: $res");
+                                      if (res == "Failed to Update") {
+                                        isSynced = false;
+                                        ShadToaster.of(context).show(
+                                          ShadToast.destructive(
+                                            title: const Text('Update failed'),
+                                            description: const Text(
+                                              'Could not update reminder on server.',
+                                            ),
+                                          ),
+                                        );
+                                      } else {
+                                        isSynced = true;
+                                      }
+                                    } catch (e) {
+                                      print("Remote update failed: $e");
+                                      isSynced = false;
+                                    }
+                                  } else {
+                                    isSynced = false;
+                                  }
+
+                                  // Update the mutable widget object for consistency
+                                  widget.reminder.isSynced = isSynced;
+
+                                  // Fetch existing to preserve state
+                                  final isar = await IsarService().db;
+                                  final existing = await isar.reminderLocals
+                                      .get(widget.reminder.id);
+
+                                  if (existing != null) {
+                                    existing.title = title;
+                                    existing.time =
+                                        "${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}";
+                                    existing.reminderDate = selectedDate;
+                                    existing.synced = isSynced;
+                                    existing.isEnabled = _isEnabled;
+                                    existing.updatedAt = DateTime.now();
+                                    // isUploaded is preserved automatically
+
+                                    await ReminderLocalDataSource()
+                                        .updateReminder(existing);
+                                  }
                                   // Re-schedule/cancel based on enabled
                                   await flutterLocalNotificationsPlugin.cancel(
                                     widget.reminder.index,
@@ -1171,18 +1182,42 @@ class _GlossyReminderCardState extends State<_GlossyReminderCard> {
   }
 
   Future<void> _upDateDB(Reminder reminder) async {
-    await ReminderLocalDataSource().updateReminder(
-      ReminderLocal(
-        userId: reminder.userId,
-        id: reminder.id,
-        title: reminder.title,
-        index: reminder.index,
-        time:
-            "${reminder.time.hour.toString().padLeft(2, '0')}:${reminder.time.minute.toString().padLeft(2, '0')}",
-        expiryDate: reminder.expiry_date,
-        isEnabled: _isEnabled,
-      ),
-    );
+    final isar = await IsarService().db;
+    final existing = await isar.reminderLocals.get(reminder.id);
+
+    if (existing == null) return;
+
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    bool synced = false;
+
+    if (hasInternet) {
+      try {
+        await UpdateReminder().updateReminder(
+          index: reminder.index,
+          title: reminder.title,
+          time:
+              "${reminder.time.hour.toString().padLeft(2, '0')}:${reminder.time.minute.toString().padLeft(2, '0')}",
+          expiryDate: reminder.expiry_date,
+          setDate: reminder.issue_date,
+          isEnabled: reminder.isEnabled,
+          issuedDate: reminder.issue_date,
+        );
+        synced = true;
+      } catch (e) {
+        print("Update failed: $e");
+        synced = false;
+      }
+    }
+
+    existing.title = reminder.title;
+    existing.time =
+        "${reminder.time.hour.toString().padLeft(2, '0')}:${reminder.time.minute.toString().padLeft(2, '0')}";
+    existing.expiryDate = reminder.expiry_date;
+    existing.isEnabled = reminder.isEnabled;
+    existing.synced = synced;
+    existing.updatedAt = DateTime.now();
+
+    await ReminderLocalDataSource().updateReminder(existing);
   }
 }
 
@@ -1198,6 +1233,7 @@ extension _CopyReminder on Reminder {
     int? index,
     bool? isEnabled,
     DateTime? issue_date,
+    bool? isSynced,
   }) {
     return Reminder(
       userId: userId ?? this.userId,
@@ -1209,6 +1245,7 @@ extension _CopyReminder on Reminder {
       index: index ?? this.index,
       isEnabled: isEnabled ?? this.isEnabled,
       issue_date: issue_date ?? this.issue_date,
+      isSynced: isSynced ?? this.isSynced,
     );
   }
 }

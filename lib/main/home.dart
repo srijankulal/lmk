@@ -151,6 +151,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               index: localReminder.index as int,
               isEnabled: localReminder.isEnabled as bool,
               issue_date: localReminder.issuedDate,
+              isSynced: localReminder.synced as bool,
             ),
           )
           .toList();
