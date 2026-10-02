@@ -17,6 +17,18 @@ class ReminderLocalDataSource {
     return await isar.reminderLocals.filter().userIdEqualTo(userId).findAll();
   }
 
+  // Get reminder by unique index
+  Future<model.ReminderLocal?> getReminderByIndex(int index) async {
+    final isar = await _isarService.db;
+    return await isar.reminderLocals.filter().indexEqualTo(index).findFirst();
+  }
+
+  // Get reminder by Isar auto-increment ID
+  Future<model.ReminderLocal?> getReminderById(int id) async {
+    final isar = await _isarService.db;
+    return await isar.reminderLocals.get(id);
+  }
+
   // Update a reminder
   Future<void> updateReminder(model.ReminderLocal reminder) async {
     final isar = await _isarService.db;

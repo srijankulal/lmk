@@ -1,7 +1,6 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import '../main/home.dart';
-import 'package:shared_preferences/shared_preferences.dart';
+import 'package:lmk/components/colours/colours.dart';
 
 class Launch extends StatefulWidget {
   const Launch({super.key});
@@ -12,49 +11,62 @@ class Launch extends StatefulWidget {
 
 class _LaunchState extends State<Launch> {
   @override
-  void initState() {
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
-    return Container(
-      color: Colors.white,
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Text(
-            'Launch Screen',
-            style: TextStyle(
-              fontSize: 24,
-              fontWeight: FontWeight.bold,
-              color: Colors.black,
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        return Scaffold(
+          backgroundColor: AppColors.background,
+          body: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Container(
+                  width: 64,
+                  height: 64,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: AppColors.primary.withAlpha(30),
+                  ),
+                  child: const Icon(
+                    Icons.bolt,
+                    size: 32,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 24),
+                Text(
+                  'LMK',
+                  style: TextStyle(
+                    fontSize: 28,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.5,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 32),
+                IconButton(
+                  style: ButtonStyle(
+                    backgroundColor: WidgetStateProperty.all(AppColors.primary),
+                    foregroundColor: WidgetStateProperty.all(Colors.white),
+                    padding: WidgetStateProperty.all(
+                      const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                    ),
+                  ),
+                  icon: const Icon(Icons.arrow_forward_rounded),
+                  onPressed: () {
+                    if (FirebaseAuth.instance.currentUser == null) {
+                      Navigator.pushReplacementNamed(context, '/signIn');
+                      return;
+                    }
+                    Navigator.pushReplacementNamed(context, '/home');
+                  },
+                ),
+              ],
             ),
           ),
-          IconButton(
-            style: ButtonStyle(
-              backgroundColor: WidgetStateProperty.all(Colors.blue),
-              foregroundColor: WidgetStateProperty.all(Colors.white),
-              padding: WidgetStateProperty.all(
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-              ),
-              textStyle: WidgetStateProperty.all(
-                const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-              ),
-            ),
-            icon: Icon(Icons.arrow_circle_right_rounded),
-
-            onPressed: () {
-              FirebaseAuth.instance.currentUser;
-              if (FirebaseAuth.instance.currentUser == null) {
-                Navigator.pushReplacementNamed(context, '/signIn');
-                return;
-              }
-              Navigator.pushReplacementNamed(context, '/home');
-            },
-          ),
-        ],
-      ),
+        );
+      },
     );
   }
 }

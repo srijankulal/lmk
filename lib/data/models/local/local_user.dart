@@ -10,4 +10,5 @@ class UserLocal {
   String uid = '';
   String name = '';
   String photoUrl = '';
+  bool guest = true;
 }

@@ -1,5 +1,5 @@
 {
-  "dart.flutterSdkPath": ".fvm/versions/3.35.6",
+  "dart.flutterSdkPath": ".fvm/flutter_sdk",
   "cSpell.words": [
     "colours",
     "Lucide",
@@ -13,10 +13,24 @@
   "search.exclude": {
     ".fvm": true
   },
+  "files.watcherExclude": {
+    "**/.fvm/**": true
+  },
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.metadata/**",
+    "**/archetype/**",
+    "**/META-INF/maven/**",
+    "**/.fvm/**"
+  ],
+  "java.project.resourceFilters": [
+    "node_modules",
+    ".git",
+    ".fvm"
+  ],
   "git.ignoredRepositories": [
     ".fvm/flutter_sdk"
   ],
   "git.autoRepositoryDetection": "subFolders",
-  "java.configuration.updateBuildConfiguration": "interactive",
-
+  "java.configuration.updateBuildConfiguration": "interactive"
 }

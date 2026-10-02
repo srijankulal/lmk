@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lmk/components/colours/colours.dart';
 
 class FabAction {
   final IconData icon;
@@ -17,7 +18,7 @@ class GlassExpandableFab extends StatefulWidget {
   const GlassExpandableFab({
     super.key,
     required this.actions,
-    this.mainColor = const Color(0xFFFF6A00),
+    this.mainColor = AppColors.primary,
     this.duration = const Duration(milliseconds: 250),
   });
 
@@ -66,7 +67,6 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
     final safeRight = media.padding.right;
     final safeBottom = media.padding.bottom;
 
-    // Wrap the whole fab area with a container that provides a subtle outer shadow.
     return SizedBox(
       width: media.size.width,
       height: 100 + safeBottom,
@@ -91,14 +91,13 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
           // Glass pill bar (expands from right)
           Padding(
             padding: EdgeInsets.only(
-              right: (safeRight > 0 ? safeRight : 16) + 72, // space for FAB
+              right: (safeRight > 0 ? safeRight : 16) + 72,
               bottom: (safeBottom > 0 ? safeBottom : 16),
             ),
             child: AnimatedBuilder(
               animation: _expand,
               builder: (context, _) {
                 final t = _expand.value;
-                // Wider for bigger buttons + more spacing
                 final extraWidth =
                     MediaQuery.of(context).size.width - 160 - safeRight;
                 final targetWidth =
@@ -112,15 +111,13 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
                     child: _LiquidGlassPill(
                       child: SizedBox(
                         width: width,
-                        height: 68, // taller pill for bigger buttons
-                        child:
-                            t <
-                                0.95 // Only show buttons when pill is 85% expanded
+                        height: 64,
+                        child: t < 0.95
                             ? const SizedBox.shrink()
                             : Padding(
                                 padding: const EdgeInsets.symmetric(
-                                  horizontal: 16.0,
-                                ), // more padding
+                                  horizontal: 14.0,
+                                ),
                                 child: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceEvenly,
@@ -131,8 +128,8 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
                                         entry.key == widget.actions.length - 1;
                                     return Padding(
                                       padding: EdgeInsets.only(
-                                        right: isLast ? 0 : 12.0,
-                                      ), // spacing between buttons
+                                        right: isLast ? 0 : 10.0,
+                                      ),
                                       child: _GlassIconButton(
                                         icon: entry.value.icon,
                                         onTap: () {
@@ -152,50 +149,50 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
             ),
           ),
 
-          // Main circular FAB (bigger and perfectly circular)
+          // Main circular FAB
           Padding(
             padding: EdgeInsets.only(
-              right: safeRight > 0 ? safeRight : 12,
+              right: safeRight > 0 ? safeRight : 16,
               bottom: safeBottom > 0 ? safeBottom : 16,
             ),
-            child: Material(
-              color: widget.mainColor,
-              elevation: 6,
-              shadowColor: Colors.black.withAlpha(30),
-              shape: const CircleBorder(),
-              child: InkWell(
-                onTap: _toggle,
-                customBorder: const CircleBorder(),
-                child: Container(
-                  decoration: BoxDecoration(
-                    color: Colors.transparent,
-                    // subtle layered shadows to give the whole widget a light lift
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.12),
-                        blurRadius: 18,
-                        spreadRadius: -4,
-                        offset: const Offset(0, 10),
-                      ),
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.04),
-                        blurRadius: 6,
-                        spreadRadius: -2,
-                        offset: const Offset(0, 3),
-                      ),
-                    ],
+            child: Container(
+              width: 58,
+              height: 58,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                  colors: [
+                    Color(0xFF8B5CF6),
+                    Color(0xFF7C3AED),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withAlpha(90),
+                    blurRadius: 20,
+                    spreadRadius: 1,
+                    offset: const Offset(0, 6),
                   ),
-                  width: 64, // bigger circular button
-                  height: 64,
-                  alignment: Alignment.center,
-                  child: AnimatedRotation(
-                    turns: _open ? 0.125 : 0.0,
-                    duration: widget.duration,
-                    curve: Curves.easeOutCubic,
-                    child: const Icon(
-                      Icons.add_rounded,
-                      size: 28,
-                      color: Colors.black,
+                ],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                shape: const CircleBorder(),
+                child: InkWell(
+                  onTap: _toggle,
+                  customBorder: const CircleBorder(),
+                  child: Center(
+                    child: AnimatedRotation(
+                      turns: _open ? 0.125 : 0.0,
+                      duration: widget.duration,
+                      curve: Curves.easeOutCubic,
+                      child: const Icon(
+                        Icons.add_rounded,
+                        size: 30,
+                        color: Colors.white,
+                      ),
                     ),
                   ),
                 ),
@@ -215,31 +212,35 @@ class _LiquidGlassPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(34),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 24, sigmaY: 24),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(34),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [Colors.white.withAlpha(75), Colors.white.withAlpha(8)],
-            ),
-            border: Border.all(color: Colors.white.withAlpha(100), width: 1.2),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withAlpha(15),
-                blurRadius: 20,
-                spreadRadius: -2,
-                offset: const Offset(0, 10),
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        final isDark = ThemeController.instance.isDarkMode;
+        return ClipRRect(
+          borderRadius: BorderRadius.circular(32),
+          child: BackdropFilter(
+            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
+            child: Container(
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(32),
+                color: isDark
+                    ? const Color(0xF21E1B29)
+                    : Colors.white.withAlpha(245),
+                border: Border.all(color: AppColors.borderSubtle, width: 1.0),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.shadow,
+                    blurRadius: 24,
+                    spreadRadius: 0,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
-            ],
+              child: child,
+            ),
           ),
-          child: child,
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -255,16 +256,24 @@ class _GlassIconButton extends StatelessWidget {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(26),
+        borderRadius: BorderRadius.circular(24),
         onTap: onTap,
         child: Container(
-          width: 40, // bigger button
-          height: 40,
+          width: 44,
+          height: 44,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: AppColors.surfaceLight,
+            border: Border.all(
+              color: AppColors.borderSubtle,
+              width: 1.0,
+            ),
+          ),
           alignment: Alignment.center,
           child: Icon(
             icon,
-            color: Colors.black87,
-            size: 30, // bigger icon
+            color: AppColors.textPrimary,
+            size: 20,
           ),
         ),
       ),

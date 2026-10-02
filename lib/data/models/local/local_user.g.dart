@@ -17,18 +17,23 @@ const UserLocalSchema = CollectionSchema(
   name: r'UserLocal',
   id: 5846211031786981232,
   properties: {
-    r'name': PropertySchema(
+    r'guest': PropertySchema(
       id: 0,
+      name: r'guest',
+      type: IsarType.bool,
+    ),
+    r'name': PropertySchema(
+      id: 1,
       name: r'name',
       type: IsarType.string,
     ),
     r'photoUrl': PropertySchema(
-      id: 1,
+      id: 2,
       name: r'photoUrl',
       type: IsarType.string,
     ),
     r'uid': PropertySchema(
-      id: 2,
+      id: 3,
       name: r'uid',
       type: IsarType.string,
     )
@@ -65,9 +70,10 @@ void _userLocalSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeString(offsets[0], object.name);
-  writer.writeString(offsets[1], object.photoUrl);
-  writer.writeString(offsets[2], object.uid);
+  writer.writeBool(offsets[0], object.guest);
+  writer.writeString(offsets[1], object.name);
+  writer.writeString(offsets[2], object.photoUrl);
+  writer.writeString(offsets[3], object.uid);
 }
 
 UserLocal _userLocalDeserialize(
@@ -77,10 +83,11 @@ UserLocal _userLocalDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = UserLocal();
+  object.guest = reader.readBool(offsets[0]);
   object.id = id;
-  object.name = reader.readString(offsets[0]);
-  object.photoUrl = reader.readString(offsets[1]);
-  object.uid = reader.readString(offsets[2]);
+  object.name = reader.readString(offsets[1]);
+  object.photoUrl = reader.readString(offsets[2]);
+  object.uid = reader.readString(offsets[3]);
   return object;
 }
 
@@ -92,10 +99,12 @@ P _userLocalDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readString(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 1:
       return (reader.readString(offset)) as P;
     case 2:
+      return (reader.readString(offset)) as P;
+    case 3:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -193,6 +202,16 @@ extension UserLocalQueryWhere
 
 extension UserLocalQueryFilter
     on QueryBuilder<UserLocal, UserLocal, QFilterCondition> {
+  QueryBuilder<UserLocal, UserLocal, QAfterFilterCondition> guestEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'guest',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<UserLocal, UserLocal, QAfterFilterCondition> idEqualTo(
       Id value) {
     return QueryBuilder.apply(this, (query) {
@@ -645,6 +664,18 @@ extension UserLocalQueryLinks
     on QueryBuilder<UserLocal, UserLocal, QFilterCondition> {}
 
 extension UserLocalQuerySortBy on QueryBuilder<UserLocal, UserLocal, QSortBy> {
+  QueryBuilder<UserLocal, UserLocal, QAfterSortBy> sortByGuest() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'guest', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserLocal, UserLocal, QAfterSortBy> sortByGuestDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'guest', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserLocal, UserLocal, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -684,6 +715,18 @@ extension UserLocalQuerySortBy on QueryBuilder<UserLocal, UserLocal, QSortBy> {
 
 extension UserLocalQuerySortThenBy
     on QueryBuilder<UserLocal, UserLocal, QSortThenBy> {
+  QueryBuilder<UserLocal, UserLocal, QAfterSortBy> thenByGuest() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'guest', Sort.asc);
+    });
+  }
+
+  QueryBuilder<UserLocal, UserLocal, QAfterSortBy> thenByGuestDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'guest', Sort.desc);
+    });
+  }
+
   QueryBuilder<UserLocal, UserLocal, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -735,6 +778,12 @@ extension UserLocalQuerySortThenBy
 
 extension UserLocalQueryWhereDistinct
     on QueryBuilder<UserLocal, UserLocal, QDistinct> {
+  QueryBuilder<UserLocal, UserLocal, QDistinct> distinctByGuest() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'guest');
+    });
+  }
+
   QueryBuilder<UserLocal, UserLocal, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -762,6 +811,12 @@ extension UserLocalQueryProperty
   QueryBuilder<UserLocal, int, QQueryOperations> idProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'id');
+    });
+  }
+
+  QueryBuilder<UserLocal, bool, QQueryOperations> guestProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'guest');
     });
   }
 

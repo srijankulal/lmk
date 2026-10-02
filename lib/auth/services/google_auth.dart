@@ -8,6 +8,7 @@ import 'package:lmk/data/models/local/local_user.dart';
 import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/launch/launch.dart';
 import 'package:lmk/data/repository/userRegister.dart';
+import 'package:lmk/services/sync_service.dart';
 
 class AuthMethods {
   final FirebaseAuth auth = FirebaseAuth.instance;
@@ -59,12 +60,6 @@ class AuthMethods {
         authorization = await googleUser.authorizationClient.authorizeScopes(
           scopes,
         );
-        if (authorization.accessToken == null) {
-          throw FirebaseAuthException(
-            code: "ERROR_MISSING_ACCESS_TOKEN",
-            message: "User did not grant required permissions",
-          );
-        }
       }
 
       final String accessToken = authorization!.accessToken;
@@ -119,6 +114,11 @@ class AuthMethods {
               ..photoUrl = user.photoURL ?? "";
             UserLocalDataSource().saveUser(details);
             print("User details saved locally: $details");
+
+            // ✅ SYNC DOWN: Fetch reminders from cloud and populate local DB
+            print("Starting initial sync...");
+            await SyncService().syncDown();
+            print("Initial sync completed.");
           } catch (e) {
             print("Error registering user on backend: $e");
           } finally {
@@ -137,12 +137,32 @@ class AuthMethods {
         );
         return userCredential;
       }
+      return null;
     } on GoogleSignInException catch (e) {
       print("GoogleSignInException: ${e.code} — ${e.description}");
       rethrow;
     } catch (e) {
       print("Error during Google Sign-In: $e");
       rethrow;
+    }
+  }
+
+  Future<void> signInAsGuest(BuildContext context, {required String name}) async {
+    // Name is already collected by the caller (sign-in page).
+    // Save the local guest user and navigate to the app.
+    try {
+      final details = UserLocal()
+        ..uid = "guest_${DateTime.now().millisecondsSinceEpoch}"
+        ..name = name
+        ..guest = true;
+      await UserLocalDataSource().saveUser(details);
+      if (!context.mounted) return;
+      Navigator.pushReplacement(
+        context,
+        MaterialPageRoute(builder: (_) => Launch()),
+      );
+    } catch (e) {
+      print('Guest sign-in error: $e');
     }
   }
 

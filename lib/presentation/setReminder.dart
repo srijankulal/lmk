@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
@@ -33,20 +34,22 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
   @override
   Widget build(BuildContext context) {
     final args = _args!;
-    final ThemeData theme = Theme.of(context);
-    return Scaffold(
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        return Scaffold(
       extendBodyBehindAppBar: true,
       appBar: AppBar(
-        title: const Text('Set reminder'),
-        backgroundColor: AppColors.surfaceDark.withAlpha(38),
-        elevation: 0,
-        foregroundColor: AppColors.textPrimary,
-        flexibleSpace: ClipRect(
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 20, sigmaY: 20),
-            child: const SizedBox.expand(),
+        title: Text(
+          'Set reminder',
+          style: TextStyle(
+            color: AppColors.textPrimary,
+            fontWeight: FontWeight.w800,
           ),
         ),
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        foregroundColor: AppColors.textPrimary,
         surfaceTintColor: Colors.transparent,
       ),
       body: Stack(
@@ -206,7 +209,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                                     context: context,
                                     initialTime: TimeOfDay.now(),
                                     builder: (context, child) {
-                                      return theme.brightness == Brightness.dark
+                                      return ThemeController.instance.isDarkMode
                                           ? Theme(
                                               data: Theme.of(context).copyWith(
                                                 colorScheme: ColorScheme.dark(
@@ -270,6 +273,8 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
       ),
       backgroundColor: Colors.transparent,
     );
+      },
+    );
   }
 
   Future<void> _onSubmit(DocData args) async {
@@ -322,16 +327,34 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
 
     final notificationId = args.documentType.hashCode.abs();
 
-    final androidDetails = AndroidNotificationDetails(
-      'reminder_channel $notificationId',
+    // Ensure the channel exists with Importance.max before scheduling.
+    // Using a single shared channel avoids the auto-creation low-importance trap.
+    const channel = AndroidNotificationChannel(
+      'reminder_channel_v2',
+      'Reminders',
+      description: 'Reminder notifications',
+      importance: Importance.max,
+      playSound: true,
+      enableVibration: true,
+      showBadge: true,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
+    );
+    await flutterLocalNotificationsPlugin
+        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
+        ?.createNotificationChannel(channel);
+
+    final androidDetails = const AndroidNotificationDetails(
+      'reminder_channel_v2',
       'Reminders',
       channelDescription: 'Reminder notifications',
       importance: Importance.max,
       playSound: true,
-      sound: const RawResourceAndroidNotificationSound('notification'),
-      priority: Priority.high,
+      priority: Priority.max,
       enableVibration: true,
-      category: AndroidNotificationCategory.event,
+      fullScreenIntent: true,
+      category: AndroidNotificationCategory.alarm,
+      visibility: NotificationVisibility.public,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
     );
     final notificationDetails = NotificationDetails(android: androidDetails);
 
@@ -350,7 +373,15 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
         tz.local,
       ),
       notificationDetails,
-      payload: '${args.documentType}|${args.expiryDate}',
+      payload: jsonEncode({
+        'index': notificationId,
+        'title': 'Reminder for ${args.documentType}',
+        'documentType': args.documentType,
+        'expiryDate': (args.expiryDate ?? selectedDate).toIso8601String(),
+        'reminderDate': selectedDate.toIso8601String(),
+        'time':
+            '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+      }),
       androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
 
@@ -366,9 +397,9 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
         index: notificationId,
         time:
             '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
-        expiryDate: args.expiryDate as DateTime,
+        expiryDate: args.expiryDate ?? selectedDate,
         issuedDate: args.issueDate ?? DateTime.now(),
-        reminderDate: args.reminderDate as DateTime,
+        reminderDate: args.reminderDate ?? selectedDate,
       );
       // print('reminder data ${repo.reminderDate}');
       // print('Saving local reminder: $repo');
@@ -383,7 +414,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
           title: 'Reminder for ${args.documentType}',
           time:
               '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
-          expiryDate: args.expiryDate as DateTime,
+          expiryDate: args.expiryDate ?? selectedDate,
           setDate: DateTime(
             selectedDate.year,
             selectedDate.month,
@@ -465,40 +496,32 @@ class GlassCard extends StatelessWidget {
     super.key,
     required this.child,
     this.padding,
-    this.radius = 18,
+    this.radius = 24,
   });
 
   @override
   Widget build(BuildContext context) {
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-        child: Container(
+    return ListenableBuilder(
+      listenable: ThemeController.instance,
+      builder: (context, _) {
+        return Container(
           padding: padding,
           decoration: BoxDecoration(
             borderRadius: BorderRadius.circular(radius),
-            gradient: LinearGradient(
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-              colors: [
-                AppColors.surface.withOpacity(0.32),
-                AppColors.cardMist.withOpacity(0.25),
-              ],
-            ),
-            border: Border.all(color: AppColors.border.withOpacity(0.3)),
-            boxShadow: const [
+            color: AppColors.surfaceGlass,
+            border: Border.all(color: AppColors.borderSubtle, width: 1.0),
+            boxShadow: [
               BoxShadow(
                 color: AppColors.shadow,
                 blurRadius: 24,
-                offset: Offset(0, 12),
-                spreadRadius: 2,
+                offset: const Offset(0, 8),
+                spreadRadius: 0,
               ),
             ],
           ),
           child: child,
-        ),
-      ),
+        );
+      },
     );
   }
 }
@@ -510,25 +533,13 @@ class _LiquidBackground extends StatelessWidget {
   Widget build(BuildContext context) {
     return DecoratedBox(
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            AppColors.background,
-            AppColors.cardMist,
-            AppColors.cardClay.withOpacity(0.85),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: AppColors.background,
       ),
       child: Stack(
         children: const [
-          Positioned.fill(child: IgnorePointer(child: _AuroraField())),
-          Positioned.fill(child: IgnorePointer(child: _VibrantBands())),
-          Positioned.fill(child: IgnorePointer(child: _EdgeSweep())),
-          _Glow(size: 260, color: AppColors.primary, top: 120, right: -80),
-          _Glow(size: 220, color: AppColors.cardSage, top: -60, left: -40),
-          _Glow(size: 180, color: AppColors.cardCoral, bottom: -40, right: -20),
-          _Glow(size: 200, color: AppColors.cardAmber, bottom: -60, left: -50),
+          _Glow(size: 320, color: AppColors.primary, top: -60, right: -80),
+          _Glow(size: 280, color: AppColors.accent, bottom: 80, left: -60),
+          _Glow(size: 200, color: Color(0xFFFF5B2E), bottom: -40, right: -40),
         ],
       ),
     );
@@ -563,8 +574,8 @@ class _Glow extends StatelessWidget {
           shape: BoxShape.circle,
           gradient: RadialGradient(
             colors: [
-              color.withOpacity(0.22),
-              color.withOpacity(0.08),
+              color.withAlpha(45),
+              color.withAlpha(12),
               Colors.transparent,
             ],
             stops: const [0.0, 0.55, 1.0],
@@ -573,269 +584,4 @@ class _Glow extends StatelessWidget {
       ),
     );
   }
-}
-
-class _AuroraField extends StatelessWidget {
-  const _AuroraField();
-
-  @override
-  Widget build(BuildContext context) {
-    return const CustomPaint(painter: _AuroraPainter());
-  }
-}
-
-class _AuroraPainter extends CustomPainter {
-  const _AuroraPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-    canvas.drawRect(
-      rect,
-      Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [
-            AppColors.cardMist.withOpacity(0.18),
-            AppColors.background.withOpacity(0.12),
-            Colors.transparent,
-          ],
-        ).createShader(rect),
-    );
-
-    const layers = 12;
-    final baseY = size.height * 0.14;
-    const gap = 24.0;
-
-    for (int i = 0; i < layers; i++) {
-      final t = i / (layers - 1);
-      final y = baseY + i * gap;
-
-      Path band = Path()
-        ..moveTo(-40, y)
-        ..cubicTo(
-          size.width * 0.25,
-          y - 28 - i * 1.2,
-          size.width * 0.55,
-          y + 34 + i * 1.8,
-          size.width + 40,
-          y - 10,
-        )
-        ..lineTo(size.width + 40, size.height + 40)
-        ..lineTo(-40, size.height + 40)
-        ..close();
-
-      final warmMix = Color.lerp(
-        AppColors.cardCoral,
-        AppColors.cardAmber,
-        0.35 + 0.25 * t,
-      )!;
-      final coolMix = Color.lerp(
-        AppColors.accent,
-        AppColors.cardSage,
-        0.35 + 0.4 * t,
-      )!;
-      final c1 = Color.lerp(
-        coolMix,
-        warmMix,
-        0.25,
-      )!.withOpacity(0.16 - t * 0.05);
-      final c2 = Color.lerp(
-        AppColors.cardClay,
-        AppColors.cardMist,
-        t,
-      )!.withOpacity(0.12 - t * 0.04);
-
-      final paint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [c1, c2, Colors.transparent],
-          stops: const [0.0, 0.7, 1.0],
-        ).createShader(rect)
-        ..blendMode = BlendMode.screen;
-
-      canvas.drawPath(band, paint);
-      canvas.drawPath(
-        Path()
-          ..moveTo(-40, y)
-          ..cubicTo(
-            size.width * 0.25,
-            y - 28 - i * 1.2,
-            size.width * 0.55,
-            y + 34 + i * 1.8,
-            size.width + 40,
-            y - 10,
-          ),
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 0.9
-          ..color = AppColors.surfaceDark.withOpacity(0.06),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _VibrantBands extends StatelessWidget {
-  const _VibrantBands();
-
-  @override
-  Widget build(BuildContext context) {
-    return const CustomPaint(painter: _VibrantBandsPainter());
-  }
-}
-
-class _VibrantBandsPainter extends CustomPainter {
-  const _VibrantBandsPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final rect = Offset.zero & size;
-
-    void drawRibbon(
-      double offset,
-      double bend,
-      double thickness,
-      List<Color> colors,
-      double opacity,
-    ) {
-      final top = size.height * (0.65 - offset);
-      final path = Path()
-        ..moveTo(-60, top)
-        ..cubicTo(
-          size.width * 0.25,
-          top - bend * 0.6,
-          size.width * 0.65,
-          top + bend,
-          size.width + 60,
-          top - bend * 0.8,
-        )
-        ..lineTo(size.width + 60, top + thickness)
-        ..cubicTo(
-          size.width * 0.65,
-          top + bend + thickness,
-          size.width * 0.25,
-          top - bend * 0.6 + thickness,
-          -60,
-          top + thickness,
-        )
-        ..close();
-
-      final paint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: colors.map((c) => c.withOpacity(opacity)).toList(),
-          stops: const [0.0, 0.6, 1.0],
-        ).createShader(rect)
-        ..blendMode = BlendMode.screen;
-
-      canvas.drawPath(path, paint);
-
-      final edge = Path()
-        ..moveTo(-60, top)
-        ..cubicTo(
-          size.width * 0.25,
-          top - bend * 0.6,
-          size.width * 0.65,
-          top + bend,
-          size.width + 60,
-          top - bend * 0.8,
-        );
-      canvas.drawPath(
-        edge,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.2
-          ..color = AppColors.cardAmber.withOpacity(opacity * 0.55),
-      );
-    }
-
-    drawRibbon(0.00, 90, 26, [
-      AppColors.cardCoral,
-      AppColors.primary,
-      Colors.transparent,
-    ], 0.22);
-    drawRibbon(0.12, 70, 22, [
-      AppColors.cardAmber,
-      AppColors.cardCoral,
-      Colors.transparent,
-    ], 0.18);
-    drawRibbon(0.26, 60, 18, [
-      AppColors.accent,
-      AppColors.cardSage,
-      Colors.transparent,
-    ], 0.14);
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
-}
-
-class _EdgeSweep extends StatelessWidget {
-  const _EdgeSweep();
-
-  @override
-  Widget build(BuildContext context) {
-    return const CustomPaint(painter: _EdgeSweepPainter());
-  }
-}
-
-class _EdgeSweepPainter extends CustomPainter {
-  const _EdgeSweepPainter();
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final layers = 14;
-    final startX = size.width * 0.62;
-
-    for (int i = 0; i < layers; i++) {
-      final inset = i * 14.0;
-      final t = i / (layers - 1);
-
-      Path p = Path()
-        ..moveTo(startX + inset, -40)
-        ..cubicTo(
-          size.width * (0.80 + 0.04 * (1 - t)),
-          size.height * 0.18,
-          size.width * (0.76 + 0.02 * (1 - t)),
-          size.height * 0.72,
-          size.width + 40,
-          size.height + 40,
-        )
-        ..lineTo(size.width + 40, -40)
-        ..close();
-
-      final a = Color.lerp(
-        AppColors.primary,
-        AppColors.cardAmber,
-        t,
-      )!.withOpacity(0.18 - t * 0.12);
-
-      final paint = Paint()
-        ..shader = LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [a, Colors.transparent],
-        ).createShader(Rect.fromLTWH(0, 0, size.width, size.height))
-        ..blendMode = BlendMode.screen;
-
-      canvas.drawPath(p, paint);
-
-      canvas.drawPath(
-        p,
-        Paint()
-          ..style = PaintingStyle.stroke
-          ..strokeWidth = 1.0
-          ..color = AppColors.cardClay.withOpacity(0.06 - t * 0.035),
-      );
-    }
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
