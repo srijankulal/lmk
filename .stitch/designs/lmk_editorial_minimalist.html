@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LMK — Minimalist Reminders</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts Hanken Grotesk -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..800;1,300..800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "outline": "#907067",
+            "primary-fixed": "#ffdbd1",
+            "primary-fixed-dim": "#ffb5a0",
+            "surface-variant": "#e2e3d9",
+            "primary-container": "#ff5722",
+            "on-error": "#ffffff",
+            "on-surface": "#1a1c17",
+            "on-secondary-fixed-variant": "#3d494a",
+            "secondary-fixed-dim": "#bcc9ca",
+            "surface-tint": "#b02f00",
+            "surface-container-highest": "#e2e3d9",
+            "error": "#ba1a1a",
+            "outline-variant": "#e4beb4",
+            "secondary": "#546162",
+            "on-surface-variant": "#5b4039",
+            "on-tertiary-fixed": "#380d00",
+            "on-secondary-container": "#586566",
+            "surface-container-lowest": "#ffffff",
+            "on-secondary-fixed": "#121e1f",
+            "secondary-fixed": "#d8e5e6",
+            "inverse-surface": "#2f312b",
+            "inverse-on-surface": "#f0f2e8",
+            "surface-bright": "#f9faf0",
+            "tertiary": "#a73a05",
+            "on-tertiary": "#ffffff",
+            "tertiary-fixed-dim": "#ffb59a",
+            "on-primary-container": "#541200",
+            "secondary-container": "#d5e2e3",
+            "on-tertiary-fixed-variant": "#802900",
+            "primary": "#b02f00",
+            "on-background": "#1a1c17",
+            "on-primary-fixed": "#3b0900",
+            "background": "#f9faf0",
+            "on-primary": "#ffffff",
+            "tertiary-fixed": "#ffdbcf",
+            "surface-dim": "#dadbd1",
+            "tertiary-container": "#ea6b37",
+            "error-container": "#ffdad6",
+            "surface": "#f9faf0",
+            "on-error-container": "#93000a",
+            "inverse-primary": "#ffb5a0",
+            "surface-container-high": "#e8e9df",
+            "on-secondary": "#ffffff",
+            "on-primary-fixed-variant": "#862200",
+            "surface-container-low": "#f3f4ea",
+            "on-tertiary-container": "#501700",
+            "surface-container": "#eeefe5"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "2xl": "1rem",
+            "3xl": "1.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin-lg": "2rem",
+            "margin": "1.25rem",
+            "gutter-sm": "0.75rem",
+            "gutter-lg": "1.5rem",
+            "gutter": "1rem",
+            "space-md": "1rem",
+            "space-sm": "0.5rem",
+            "space-xs": "0.25rem",
+            "space-xl": "2rem",
+            "space-lg": "1.5rem",
+            "margin-sm": "1rem"
+          },
+          "fontFamily": {
+            "headline-md": ["Hanken Grotesk"],
+            "headline-sm": ["Hanken Grotesk"],
+            "label-lg": ["Hanken Grotesk"],
+            "headline-xl-mobile": ["Hanken Grotesk"],
+            "label-sm": ["Hanken Grotesk"],
+            "label-md": ["Hanken Grotesk"],
+            "body-sm": ["Hanken Grotesk"],
+            "headline-lg": ["Hanken Grotesk"],
+            "headline-xl": ["Hanken Grotesk"],
+            "body-md": ["Hanken Grotesk"],
+            "body-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+            "headline-md": ["22px", { "lineHeight": "28px", "letterSpacing": "-0.025em", "fontWeight": "600" }],
+            "headline-sm": ["18px", { "lineHeight": "24px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+            "label-lg": ["14px", { "lineHeight": "18px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+            "headline-xl-mobile": ["32px", { "lineHeight": "36px", "letterSpacing": "-0.035em", "fontWeight": "700" }],
+            "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.06em", "fontWeight": "700" }],
+            "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600" }],
+            "body-sm": ["13px", { "lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400" }],
+            "headline-lg": ["28px", { "lineHeight": "32px", "letterSpacing": "-0.03em", "fontWeight": "600" }],
+            "headline-xl": ["40px", { "lineHeight": "44px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+            "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "-0.01em", "fontWeight": "400" }],
+            "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "-0.015em", "fontWeight": "400" }]
+          }
+        }
+      }
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-family: 'Material Symbols Outlined';
+      font-weight: normal;
+      font-style: normal;
+      display: inline-block;
+      line-height: 1;
+      text-transform: none;
+      letter-spacing: normal;
+      word-wrap: normal;
+      white-space: nowrap;
+      direction: ltr;
+      -webkit-font-smoothing: antialiased;
+    }
+    /* Subtle paper texture illusion & tactile borders */
+    .tactile-card {
+      border: 1px solid rgba(46, 58, 59, 0.08);
+      box-shadow: 0 1px 3px rgba(46, 58, 59, 0.02);
+    }
+    .hero-slate {
+      background: linear-gradient(145deg, #2E3A3B 0%, #1a2222 100%);
+      box-shadow: 0 14px 34px -8px rgba(31, 38, 38, 0.35);
+    }
+    .accent-pill-glow {
+      box-shadow: 0 8px 20px -2px rgba(255, 87, 34, 0.35);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-surface-container-low text-on-surface antialiased min-h-screen flex flex-col justify-between selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- Shared Component: TopAppBar -->
+<header class="bg-surface dark:bg-inverse-surface border-b border-surface-variant dark:border-outline sticky top-0 z-40 w-full">
+<div class="flex justify-between items-center w-full px-5 py-3 max-w-md mx-auto">
+<!-- Brand & Leading Icon -->
+<div class="flex items-center gap-2.5">
+<div class="relative flex items-center justify-center w-8 h-8 rounded-lg bg-surface-container text-on-surface">
+<span class="material-symbols-outlined text-primary text-xl">deployed_code</span>
+<!-- Live Status Indicator -->
+<span class="absolute -top-0.5 -right-0.5 flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+</span>
+</div>
+<span class="font-headline-sm text-headline-sm font-bold tracking-tight text-on-surface dark:text-inverse-on-surface">LMK</span>
+</div>
+<!-- Trailing Action Cluster -->
+<div class="flex items-center gap-3">
+<button aria-label="Search" class="p-1.5 rounded-full hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors active:scale-95 duration-150 text-secondary" type="button">
+<span class="material-symbols-outlined text-xl">search</span>
+</button>
+<button aria-label="Toggle Night Mode" class="p-1.5 rounded-full hover:bg-surface-container dark:hover:bg-inverse-surface transition-colors active:scale-95 duration-150 text-secondary" type="button">
+<span class="material-symbols-outlined text-xl">dark_mode</span>
+</button>
+<div class="flex items-center gap-2 pl-1 border-l border-surface-container-highest">
+<span class="font-label-md text-label-md text-secondary">Srijan</span>
+<div class="w-7 h-7 rounded-full bg-inverse-surface text-surface flex items-center justify-center font-label-sm text-label-sm font-bold ring-1 ring-outline-variant">
+            S
+          </div>
+</div>
+</div>
+</div>
+</header>
+<!-- Main Editorial Canvas -->
+<main class="w-full max-w-md mx-auto px-5 pt-6 pb-28 flex-1">
+<!-- Section Header: Editorial Title & Filter Controls -->
+<section class="space-y-4 mb-7">
+<div class="flex items-baseline justify-between">
+<div class="flex items-baseline gap-2.5">
+<h1 class="font-headline-xl-mobile text-headline-xl-mobile font-bold tracking-tight text-on-surface">
+            Reminders
+          </h1>
+<span class="font-label-sm text-label-sm px-2 py-0.5 rounded-full bg-surface-container text-secondary font-semibold">
+            04 Active
+          </span>
+</div>
+<button class="text-secondary hover:text-primary transition-colors text-xs font-label-md flex items-center gap-1 active:scale-95 duration-150" type="button">
+<span>Sort</span>
+<span class="material-symbols-outlined text-base">swap_vert</span>
+</button>
+</div>
+<!-- Segmented Pill Filters -->
+<div class="flex items-center gap-2 overflow-x-auto pb-1 no-scrollbar">
+<button class="px-4 py-1.5 rounded-full bg-inverse-surface text-inverse-on-surface font-label-md text-label-md shadow-sm transition-transform active:scale-95" type="button">
+          All
+        </button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-high text-secondary hover:text-on-surface font-label-md text-label-md transition-colors active:scale-95" type="button">
+          Active
+        </button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container-high text-secondary hover:text-on-surface font-label-md text-label-md transition-colors active:scale-95" type="button">
+          Archived
+        </button>
+<button class="px-3 py-1.5 rounded-full bg-surface-container-high text-secondary hover:text-on-surface font-label-md text-label-md ml-auto flex items-center gap-1 active:scale-95" type="button">
+<span class="material-symbols-outlined text-sm">tune</span>
+</button>
+</div>
+</section>
+<!-- Bento Canvas / Stack -->
+<div class="space-y-4">
+<!-- HERO FEATURED CARD: Deep Charcoal Slate -->
+<section class="hero-slate text-inverse-on-surface rounded-3xl p-5 relative overflow-hidden transition-all duration-300">
+<!-- Ambient Decorative Halo -->
+<div class="absolute -right-10 -bottom-10 w-36 h-36 bg-primary-container opacity-10 rounded-full blur-2xl pointer-events-none"></div>
+<!-- Top Row: Date Chip & Active Toggle -->
+<div class="flex items-center justify-between mb-4">
+<div class="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-white/10 text-white/90 backdrop-blur-sm">
+<span class="material-symbols-outlined text-sm text-primary-fixed">calendar_today</span>
+<span class="font-label-md text-label-md tracking-normal">Tomorrow • 10:00 AM</span>
+</div>
+<!-- LMK Stylized Interactive Toggle Switch -->
+<button aria-checked="true" class="w-11 h-6 rounded-full bg-gradient-to-r from-[#FF5722] to-[#FF7A45] p-0.5 flex items-center justify-end transition-all focus:outline-none shadow-sm cursor-pointer" role="switch" type="button">
+<span class="w-5 h-5 rounded-full bg-white shadow-md transform transition-transform"></span>
+</button>
+</div>
+<!-- Headline & Editorial Metadata -->
+<div class="mb-5">
+<h2 class="font-headline-lg text-headline-lg font-bold tracking-tight text-white mb-1">
+            Passport Renewal
+          </h2>
+<p class="font-body-sm text-body-sm text-white/70">
+            Embassy appointment confirmed. Bring physical original certificates &amp; photo set.
+          </p>
+</div>
+<!-- Bottom Row: Status Tag & Quick Actions -->
+<div class="flex items-center justify-between pt-3 border-t border-white/10">
+<span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-[#FF5722]/20 border border-[#FF5722]/30 text-primary-fixed font-label-sm text-label-sm font-bold tracking-wider">
+<span class="w-1.5 h-1.5 rounded-full bg-[#FF5722] animate-pulse"></span>
+            URGENT • 2 DAYS LEFT
+          </span>
+<div class="flex items-center gap-1 text-white/60">
+<button aria-label="Edit Reminder" class="p-2 rounded-full hover:bg-white/10 hover:text-white transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined text-lg">edit</span>
+</button>
+<button aria-label="Delete Reminder" class="p-2 rounded-full hover:bg-white/10 hover:text-red-300 transition-colors active:scale-95 duration-150" type="button">
+<span class="material-symbols-outlined text-lg">delete</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Minimalist Editorial List Stack -->
+<section class="space-y-3 pt-2">
+<div class="flex items-center justify-between px-1">
+<span class="font-label-sm text-label-sm text-secondary uppercase tracking-widest">Upcoming Obligations</span>
+<span class="font-label-sm text-label-sm text-secondary">3 scheduled</span>
+</div>
+<!-- Cascading Item 1: Health Insurance -->
+<article class="tactile-card bg-surface-container-lowest rounded-2xl p-4 flex items-center justify-between hover:bg-surface-bright transition-colors group">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-xl text-secondary group-hover:text-primary">verified_user</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                Health Insurance
+              </h3>
+<p class="font-body-sm text-body-sm text-secondary">
+                MetLife Annual Premium
+              </p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-md text-label-md px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-medium">
+              Due in 5d
+            </span>
+<span class="font-label-sm text-label-sm text-secondary">Oct 28</span>
+</div>
+</article>
+<!-- Cascading Item 2: Vehicle Emission Test -->
+<article class="tactile-card bg-surface-container-lowest rounded-2xl p-4 flex items-center justify-between hover:bg-surface-bright transition-colors group">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-xl text-secondary group-hover:text-primary">directions_car</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                Vehicle Emission Test
+              </h3>
+<p class="font-body-sm text-body-sm text-secondary">
+                State Inspection Depot #4
+              </p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-md text-label-md px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-medium">
+              Due in 12d
+            </span>
+<span class="font-label-sm text-label-sm text-secondary">Nov 04</span>
+</div>
+</article>
+<!-- Cascading Item 3: Apartment Lease -->
+<article class="tactile-card bg-surface-container-lowest rounded-2xl p-4 flex items-center justify-between hover:bg-surface-bright transition-colors group">
+<div class="flex items-center gap-3.5">
+<div class="w-10 h-10 rounded-xl bg-surface-container flex items-center justify-center text-on-surface group-hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-xl text-secondary group-hover:text-primary">apartment</span>
+</div>
+<div>
+<h3 class="font-headline-sm text-headline-sm font-semibold text-on-surface">
+                Apartment Lease
+              </h3>
+<p class="font-body-sm text-body-sm text-secondary">
+                Notice period declaration
+              </p>
+</div>
+</div>
+<div class="flex flex-col items-end gap-1">
+<span class="font-label-md text-label-md px-2.5 py-1 rounded-full bg-surface-container text-on-surface-variant font-medium">
+              Next month
+            </span>
+<span class="font-label-sm text-label-sm text-secondary">Nov 22</span>
+</div>
+</article>
+</section>
+<!-- Auxiliary Tactile Note Module -->
+<section class="mt-4 p-4 rounded-2xl bg-surface-container border border-surface-variant/40 flex items-start gap-3">
+<span class="material-symbols-outlined text-primary text-xl mt-0.5">tips_and_updates</span>
+<div class="space-y-0.5">
+<h4 class="font-label-lg text-label-lg text-on-surface font-semibold">Quiet Mode Active</h4>
+<p class="font-body-sm text-body-sm text-secondary">
+            Only urgent alerts will notify you with audio nudges. All non-urgent reminders summarize daily at 7 PM.
+          </p>
+</div>
+</section>
+</div>
+</main>
+<!-- Floating Action Button (FAB) -->
+<div class="fixed bottom-20 right-6 z-40 max-w-md mx-auto pointer-events-auto">
+<button aria-label="Add Reminder" class="w-14 h-14 rounded-full bg-gradient-to-tr from-[#FF5722] to-[#FF7A45] text-white flex items-center justify-center accent-pill-glow transition-all transform hover:scale-105 active:scale-95 duration-150 focus:outline-none" type="button">
+<span class="material-symbols-outlined text-2xl font-bold">add</span>
+</button>
+</div>
+<!-- Shared Component: BottomNavBar -->
+<nav class="fixed bottom-0 left-0 w-full z-50 flex justify-around items-center px-4 py-2.5 max-w-md mx-auto bg-surface dark:bg-inverse-surface border-t border-surface-variant dark:border-outline">
+<!-- Reminders (Active Tab based on page intent) -->
+<a class="flex flex-col items-center justify-center gap-1 text-primary dark:text-primary-fixed font-semibold active:scale-95 transition-transform duration-150" href="#reminders">
+<div class="relative flex items-center justify-center">
+<span class="material-symbols-outlined text-2xl">check_circle</span>
+<!-- Brand Micro-dot indicator -->
+<span class="absolute -bottom-1 w-1 h-1 rounded-full bg-primary-container"></span>
+</div>
+<span class="font-label-sm text-label-sm">Reminders</span>
+</a>
+<!-- Calendar -->
+<a class="flex flex-col items-center justify-center gap-1 text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors active:scale-95 duration-150" href="#calendar">
+<span class="material-symbols-outlined text-2xl">calendar_today</span>
+<span class="font-label-sm text-label-sm">Calendar</span>
+</a>
+<!-- Search -->
+<a class="flex flex-col items-center justify-center gap-1 text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors active:scale-95 duration-150" href="#search">
+<span class="material-symbols-outlined text-2xl">search</span>
+<span class="font-label-sm text-label-sm">Search</span>
+</a>
+<!-- Profile -->
+<a class="flex flex-col items-center justify-center gap-1 text-secondary dark:text-secondary-fixed-dim hover:text-primary dark:hover:text-primary-fixed transition-colors active:scale-95 duration-150" href="#profile">
+<span class="material-symbols-outlined text-2xl">person</span>
+<span class="font-label-sm text-label-sm">Profile</span>
+</a>
+</nav>
+<!-- Interaction Logic for Toggles & Filters -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+      // Toggle Switch Interaction
+      const toggle = document.querySelector('[role="switch"]');
+      if (toggle) {
+        toggle.addEventListener('click', () => {
+          const isChecked = toggle.getAttribute('aria-checked') === 'true';
+          toggle.setAttribute('aria-checked', !isChecked);
+          const thumb = toggle.querySelector('span');
+          if (isChecked) {
+            toggle.classList.remove('bg-gradient-to-r', 'from-[#FF5722]', 'to-[#FF7A45]');
+            toggle.classList.add('bg-white/20');
+            thumb.classList.add('-translate-x-5');
+          } else {
+            toggle.classList.add('bg-gradient-to-r', 'from-[#FF5722]', 'to-[#FF7A45]');
+            toggle.classList.remove('bg-white/20');
+            thumb.classList.remove('-translate-x-5');
+          }
+        });
+      }
+
+      // Filter Pill Selection Interaction
+      const filterButtons = document.querySelectorAll('section div.overflow-x-auto button');
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', (e) => {
+          if (btn.querySelector('.material-symbols-outlined')) return;
+          filterButtons.forEach(b => {
+            if (!b.querySelector('.material-symbols-outlined')) {
+              b.className = 'px-4 py-1.5 rounded-full bg-surface-container-high text-secondary hover:text-on-surface font-label-md text-label-md transition-colors active:scale-95';
+            }
+          });
+          btn.className = 'px-4 py-1.5 rounded-full bg-inverse-surface text-inverse-on-surface font-label-md text-label-md shadow-sm transition-transform active:scale-95';
+        });
+      });
+    });
+  </script>
+</body></html>

@@ -12,6 +12,7 @@ import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/data/repository/remote/delete_reminder.dart';
 import 'package:lmk/data/repository/remote/update_reminder.dart';
 import 'package:lmk/main.dart';
+import 'package:lmk/services/settings_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:timezone/timezone.dart' as tz;
 
@@ -278,9 +279,10 @@ class _BuildCardState extends State<BuildCard> {
   }
 
   /// Builds the cascading overlapping deck of cards matching reference image
+  /// Top card is kept physically above the subsequent cards with staggered entrance animations
   Widget _buildCascadingDeck(List<Reminder> others, bool isDark) {
-    const double cardHeight = 112.0;
-    const double peekHeight = 54.0;
+    const double cardHeight = 98.0;
+    const double peekHeight = 72.0;
     final double stackHeight = (others.length - 1) * peekHeight + cardHeight;
 
     return SizedBox(
@@ -288,30 +290,46 @@ class _BuildCardState extends State<BuildCard> {
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          for (int i = 0; i < others.length; i++)
+          // Keep top card visually above the others by rendering from bottom (last) to top (first)
+          for (int i = others.length - 1; i >= 0; i--)
             Positioned(
               top: i * peekHeight,
               left: 0,
               right: 0,
               height: cardHeight,
-              child: _SwipeDismissWrapper(
-                key: ValueKey('deck_${others[i].id}'),
-                reminder: others[i],
-                onDelete: (id) {
-                  widget.onDelete?.call(id);
+              child: TweenAnimationBuilder<double>(
+                key: ValueKey('deck_anim_${others[i].id}'),
+                tween: Tween<double>(begin: 0.0, end: 1.0),
+                duration: Duration(milliseconds: 250 + (i * 50).clamp(0, 300)),
+                curve: Curves.easeOutBack,
+                builder: (context, value, child) {
+                  return Transform.translate(
+                    offset: Offset(0, (1 - value) * 16),
+                    child: Opacity(
+                      opacity: value.clamp(0.0, 1.0),
+                      child: child,
+                    ),
+                  );
                 },
-                child: _StackedDeckCard(
-                  key: ValueKey('deck_card_${others[i].id}'),
+                child: _SwipeDismissWrapper(
+                  key: ValueKey('deck_${others[i].id}'),
                   reminder: others[i],
-                  index: i,
-                  total: others.length,
-                  onSelect: () {
-                    HapticFeedback.selectionClick();
-                    setState(() {
-                      _selectedReminderId = others[i].id;
-                    });
+                  onDelete: (id) {
+                    widget.onDelete?.call(id);
                   },
-                  onDelete: widget.onDelete,
+                  child: _StackedDeckCard(
+                    key: ValueKey('deck_card_${others[i].id}'),
+                    reminder: others[i],
+                    index: i,
+                    total: others.length,
+                    onSelect: () {
+                      HapticFeedback.selectionClick();
+                      setState(() {
+                        _selectedReminderId = others[i].id;
+                      });
+                    },
+                    onDelete: widget.onDelete,
+                  ),
                 ),
               ),
             ),
@@ -534,6 +552,148 @@ class _SwipeDismissWrapper extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// 🏷️ CATEGORY ICON & 3D WELL HELPERS
+// ---------------------------------------------------------------------------
+IconData getCategoryIconForTitle(String title) {
+  final lower = title.toLowerCase();
+  if (lower.contains('insurance') ||
+      lower.contains('health') ||
+      lower.contains('medical') ||
+      lower.contains('doctor') ||
+      lower.contains('shield') ||
+      lower.contains('safe') ||
+      lower.contains('policy') ||
+      lower.contains('hospital') ||
+      lower.contains('dental') ||
+      lower.contains('mediclaim')) {
+    return LucideIcons.shieldCheck;
+  }
+  if (lower.contains('car') ||
+      lower.contains('vehicle') ||
+      lower.contains('emission') ||
+      lower.contains('puc') ||
+      lower.contains('bike') ||
+      lower.contains('motor') ||
+      lower.contains('drive') ||
+      lower.contains('license') ||
+      lower.contains('service') ||
+      lower.contains('rc') ||
+      lower.contains('fastag')) {
+    return LucideIcons.car;
+  }
+  if (lower.contains('passport') ||
+      lower.contains('visa') ||
+      lower.contains('aadhaar') ||
+      lower.contains('pan') ||
+      lower.contains('voter') ||
+      lower.contains('identity') ||
+      lower.contains('citizenship') ||
+      lower.contains('cert') ||
+      lower.contains('certificate') ||
+      lower.contains('document')) {
+    return LucideIcons.fileBadge;
+  }
+  if (lower.contains('lease') ||
+      lower.contains('rent') ||
+      lower.contains('apartment') ||
+      lower.contains('house') ||
+      lower.contains('home') ||
+      lower.contains('flat') ||
+      lower.contains('building') ||
+      lower.contains('property')) {
+    return LucideIcons.building;
+  }
+  if (lower.contains('bill') ||
+      lower.contains('electricity') ||
+      lower.contains('water') ||
+      lower.contains('gas') ||
+      lower.contains('wifi') ||
+      lower.contains('broadband') ||
+      lower.contains('recharge') ||
+      lower.contains('pay') ||
+      lower.contains('bank') ||
+      lower.contains('money') ||
+      lower.contains('emi') ||
+      lower.contains('loan') ||
+      lower.contains('subscription') ||
+      lower.contains('finance') ||
+      lower.contains('credit') ||
+      lower.contains('tax') ||
+      lower.contains('gst')) {
+    return LucideIcons.creditCard;
+  }
+  if (lower.contains('flight') ||
+      lower.contains('trip') ||
+      lower.contains('travel') ||
+      lower.contains('train') ||
+      lower.contains('ticket') ||
+      lower.contains('hotel') ||
+      lower.contains('booking')) {
+    return LucideIcons.plane;
+  }
+  if (lower.contains('warranty') ||
+      lower.contains('guarantee') ||
+      lower.contains('phone') ||
+      lower.contains('laptop') ||
+      lower.contains('device')) {
+    return LucideIcons.shieldAlert;
+  }
+  if (lower.contains('work') ||
+      lower.contains('exam') ||
+      lower.contains('project') ||
+      lower.contains('meeting') ||
+      lower.contains('deadline') ||
+      lower.contains('contract')) {
+    return LucideIcons.briefcase;
+  }
+  return LucideIcons.calendar;
+}
+
+Widget build3DIconWell(
+  IconData icon,
+  bool isDark,
+  bool isUrgent,
+  bool isEnabled, {
+  double size = 36,
+  double iconSize = 16,
+  Color? iconColor,
+  Color? backgroundColor,
+}) {
+  return Container(
+    width: size,
+    height: size,
+    decoration: BoxDecoration(
+      borderRadius: BorderRadius.circular(size * 0.3),
+      color: backgroundColor ??
+          (isDark ? const Color(0xFF13191A) : const Color(0xFFE8EADE)),
+      border: Border.all(
+        color: isDark ? Colors.white.withAlpha(25) : const Color(0xFFD6D9C8),
+        width: 1.0,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: isDark ? Colors.black.withAlpha(120) : const Color(0x182E3A3B),
+          blurRadius: 4,
+          offset: const Offset(0, 2),
+        ),
+      ],
+    ),
+    child: Center(
+      child: Icon(
+        icon,
+        size: iconSize,
+        color: !isEnabled
+            ? AppColors.textTertiary
+            : (iconColor ??
+                (isUrgent
+                    ? AppColors.primary
+                    : (isDark ? const Color(0xFF38BDF8) : AppColors.secondary))),
+      ),
+    ),
+  );
+}
+
+// ---------------------------------------------------------------------------
 // 🌟 FEATURED ACTIVE REMINDER CARD (Top Hero Card)
 // ---------------------------------------------------------------------------
 class _FeaturedReminderCard extends StatefulWidget {
@@ -667,20 +827,45 @@ class _FeaturedReminderCardState extends State<_FeaturedReminderCard> {
                     ),
                     const SizedBox(height: 14),
 
-                    // Middle: Title (Editorial typography)
-                    Text(
-                      _title,
-                      style: TextStyle(
-                        color: _isEnabled ? Colors.white : AppColors.textTertiary,
-                        fontSize: 21,
-                        fontWeight: FontWeight.w800,
-                        letterSpacing: -0.4,
-                        height: 1.2,
-                        decoration:
-                            _isEnabled ? null : TextDecoration.lineThrough,
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
+                    // Middle: Title with dynamic 3D Category Icon
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        build3DIconWell(
+                          getCategoryIconForTitle(_title),
+                          isDark,
+                          isUrgent,
+                          _isEnabled,
+                          size: 40,
+                          iconSize: 19,
+                          backgroundColor: isDark
+                              ? const Color(0x33FFFFFF)
+                              : Colors.white.withAlpha(220),
+                          iconColor: !_isEnabled
+                              ? AppColors.textTertiary
+                              : (isDark ? Colors.white : AppColors.primary),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            _title,
+                            style: TextStyle(
+                              color: _isEnabled
+                                  ? Colors.white
+                                  : AppColors.textTertiary,
+                              fontSize: 20,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: -0.4,
+                              height: 1.2,
+                              decoration: _isEnabled
+                                  ? null
+                                  : TextDecoration.lineThrough,
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 14),
 
@@ -767,15 +952,19 @@ class _FeaturedReminderCardState extends State<_FeaturedReminderCard> {
 
   Widget _statusPill(bool isUrgent, bool isDark) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
         color: _isEnabled
-            ? Colors.white.withAlpha(35)
+            ? (isUrgent
+                ? const Color(0xFFFF5722).withAlpha(55)
+                : Colors.white.withAlpha(30))
             : AppColors.surfaceLight,
         borderRadius: BorderRadius.circular(10),
         border: Border.all(
           color: _isEnabled
-              ? Colors.white.withAlpha(55)
+              ? (isUrgent
+                  ? const Color(0xFFFF7A45).withAlpha(120)
+                  : Colors.white.withAlpha(50))
               : AppColors.borderSubtle,
         ),
       ),
@@ -789,9 +978,16 @@ class _FeaturedReminderCardState extends State<_FeaturedReminderCard> {
               shape: BoxShape.circle,
               color: _isEnabled
                   ? (isUrgent
-                      ? const Color(0xFFFF5252)
+                      ? const Color(0xFFFF5722)
                       : const Color(0xFF10B981))
                   : AppColors.textTertiary,
+              boxShadow: [
+                if (_isEnabled && isUrgent)
+                  BoxShadow(
+                    color: const Color(0xFFFF5722).withAlpha(180),
+                    blurRadius: 6,
+                  ),
+              ],
             ),
           ),
           const SizedBox(width: 5),
@@ -801,7 +997,9 @@ class _FeaturedReminderCardState extends State<_FeaturedReminderCard> {
               fontSize: 10,
               fontWeight: FontWeight.w800,
               letterSpacing: 0.7,
-              color: _isEnabled ? Colors.white : AppColors.textSecondary,
+              color: _isEnabled
+                  ? (isUrgent ? const Color(0xFFFFB399) : Colors.white)
+                  : AppColors.textSecondary,
             ),
           ),
         ],
@@ -885,31 +1083,56 @@ class _FeaturedReminderCardState extends State<_FeaturedReminderCard> {
     return GestureDetector(
       onTap: _toggleReminder,
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        width: 36.0,
-        height: 22.0,
+        duration: const Duration(milliseconds: 220),
+        curve: Curves.easeInOut,
+        width: 44.0,
+        height: 25.0,
+        padding: const EdgeInsets.all(2.5),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(11.0),
+          borderRadius: BorderRadius.circular(13.0),
+          gradient: _isEnabled
+              ? const LinearGradient(
+                  colors: [Color(0xFFFF7A45), Color(0xFFFF5722)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                )
+              : null,
           color: _isEnabled
-              ? Colors.white.withAlpha(200)
-              : AppColors.surfaceLight,
+              ? null
+              : (isDark ? const Color(0xFF263032) : const Color(0xFFE2E4D8)),
           border: Border.all(
-            color: _isEnabled ? Colors.white : AppColors.borderSubtle,
+            color: _isEnabled
+                ? Colors.white.withAlpha(90)
+                : (isDark ? Colors.white.withAlpha(25) : const Color(0xFFD4D6C8)),
+            width: 1.0,
           ),
+          boxShadow: [
+            if (_isEnabled)
+              BoxShadow(
+                color: const Color(0xFFFF5722).withAlpha(120),
+                blurRadius: 10,
+                offset: const Offset(0, 2),
+              ),
+          ],
         ),
         child: AnimatedAlign(
-          duration: const Duration(milliseconds: 200),
+          duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutBack,
           alignment:
               _isEnabled ? Alignment.centerRight : Alignment.centerLeft,
           child: Container(
-            width: 15.0,
-            height: 15.0,
-            margin: const EdgeInsets.symmetric(horizontal: 2),
+            width: 19.0,
+            height: 19.0,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              color:
-                  _isEnabled ? AppColors.primary : AppColors.textTertiary,
+              color: Colors.white,
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withAlpha(45),
+                  blurRadius: 4,
+                  offset: const Offset(0, 1),
+                ),
+              ],
             ),
           ),
         ),
@@ -993,21 +1216,22 @@ class _StackedDeckCardState extends State<_StackedDeckCard> {
   bool _isPressed = false;
 
   LinearGradient _getCardGradient() {
-    final idx = (widget.reminder.index.abs() + widget.index + 1) %
-        AppColors.cardGradients.length;
+    final idx =
+        (widget.reminder.index.abs() + widget.index + 1) % AppColors.cardGradients.length;
     return AppColors.cardGradients[idx];
   }
 
   @override
   Widget build(BuildContext context) {
     final isDark = ThemeController.instance.isDarkMode;
-    final gradient = _getCardGradient();
     final effectiveDate =
         widget.reminder.reminderDate ?? widget.reminder.expiry_date;
     final daysLeft = _calculateDaysLeft(effectiveDate);
     final dueText = _formatDueText(daysLeft);
     final isUrgent = daysLeft <= 3;
     final isEnabled = widget.reminder.isEnabled;
+    final cardGradient = _getCardGradient();
+    final categoryIcon = getCategoryIconForTitle(widget.reminder.title);
 
     return GestureDetector(
       onTapDown: (_) => setState(() => _isPressed = true),
@@ -1026,173 +1250,146 @@ class _StackedDeckCardState extends State<_StackedDeckCard> {
         );
       },
       child: AnimatedScale(
-        scale: _isPressed ? 0.98 : 1.0,
+        scale: _isPressed ? 0.97 : 1.0,
         duration: const Duration(milliseconds: 110),
         curve: Curves.easeOut,
         child: Container(
+          height: 94,
           decoration: BoxDecoration(
-            gradient: isEnabled ? gradient : null,
-            color: isEnabled ? null : AppColors.surface,
+            color: isDark
+                ? (isEnabled ? const Color(0xEB1E2729) : AppColors.surface)
+                : (isEnabled ? AppColors.surface : AppColors.surfaceMuted),
             borderRadius: BorderRadius.circular(22),
             border: Border.all(
-              color: isEnabled
-                  ? Colors.white.withAlpha(isDark ? 40 : 65)
-                  : AppColors.borderSubtle,
+              color: isDark
+                  ? (isEnabled ? Colors.white.withAlpha(28) : AppColors.borderSubtle)
+                  : (isEnabled ? const Color(0xFFE2E4D8) : AppColors.borderSubtle),
               width: 1.1,
             ),
             boxShadow: [
+              // Clean downward drop shadow casting onto cards below in the deck
               BoxShadow(
-                color: Colors.black.withAlpha(isDark ? 65 : 30),
-                blurRadius: 12,
-                offset: const Offset(0, -3),
+                color: isDark
+                    ? Colors.black.withAlpha(160)
+                    : const Color(0x222E3A3B),
+                blurRadius: 16,
+                offset: const Offset(0, 6),
               ),
-              if (isEnabled)
+              if (isDark && isEnabled)
                 BoxShadow(
-                  color: gradient.colors.first.withAlpha(isDark ? 55 : 35),
-                  blurRadius: 16,
-                  offset: const Offset(0, 4),
+                  color: Colors.white.withAlpha(14),
+                  blurRadius: 1,
+                  offset: const Offset(0, -1),
                 ),
             ],
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(22),
             child: BackdropFilter(
-              filter: ImageFilter.blur(sigmaX: 1, sigmaY: 1),
+              filter: ImageFilter.blur(sigmaX: 12, sigmaY: 12),
               child: Padding(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
+                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
                   children: [
-                    // Exposed Header Row (Always visible in overlapping deck)
-                    Row(
-                      children: [
-                        // Category Icon Bubble
-                        Container(
-                          width: 32,
-                          height: 32,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: Colors.white.withAlpha(35),
-                          ),
-                          child: const Icon(
-                            LucideIcons.calendar,
-                            size: 15,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-
-                        // Title & Subtitle Column
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                widget.reminder.title,
-                                style: TextStyle(
-                                  color: isEnabled
-                                      ? Colors.white
-                                      : AppColors.textTertiary,
-                                  fontSize: 14.5,
-                                  fontWeight: FontWeight.w700,
-                                  letterSpacing: -0.2,
-                                  decoration: isEnabled
-                                      ? null
-                                      : TextDecoration.lineThrough,
-                                ),
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                              ),
-                              const SizedBox(height: 2),
-                              Text(
-                                '${_formatDateShort(effectiveDate)} • ${widget.reminder.time.format(context)}',
-                                style: TextStyle(
-                                  color: Colors.white.withAlpha(190),
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w500,
-                                ),
-                                maxLines: 1,
-                              ),
-                            ],
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-
-                        // Due Tag
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 4,
-                          ),
-                          decoration: BoxDecoration(
-                            color: isEnabled
-                                ? (isUrgent
-                                    ? Colors.red.withAlpha(50)
-                                    : Colors.black.withAlpha(28))
-                                : AppColors.surfaceLight,
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          child: Text(
-                            dueText,
-                            style: TextStyle(
-                              fontSize: 10,
-                              fontWeight: FontWeight.w700,
-                              color: isEnabled
-                                  ? (isUrgent
-                                      ? const Color(0xFFFFB3B3)
-                                      : Colors.white)
-                                  : AppColors.textSecondary,
-                            ),
-                          ),
-                        ),
-                      ],
+                    // Vibrant Color Accent Pill
+                    Container(
+                      width: 3.5,
+                      height: 28,
+                      decoration: BoxDecoration(
+                        gradient: cardGradient,
+                        borderRadius: BorderRadius.circular(2),
+                      ),
                     ),
+                    const SizedBox(width: 8),
 
-                    // Lower area (Visible on the last card in the deck)
-                    const Spacer(),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                      children: [
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.chevronUp,
-                              size: 12,
-                              color: Colors.white.withAlpha(150),
+                    // Category 3D Embossed Icon Well
+                    build3DIconWell(
+                      categoryIcon,
+                      isDark,
+                      isUrgent,
+                      isEnabled,
+                      size: 38,
+                      iconSize: 17,
+                      iconColor: isUrgent
+                          ? AppColors.primary
+                          : (isDark ? cardGradient.colors.last : cardGradient.colors.first),
+                    ),
+                    const SizedBox(width: 10),
+
+                    // Title & Subtitle Column
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            widget.reminder.title,
+                            style: TextStyle(
+                              color: isEnabled
+                                  ? AppColors.textPrimary
+                                  : AppColors.textTertiary,
+                              fontSize: 14.5,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: -0.2,
+                              decoration: isEnabled
+                                  ? null
+                                  : TextDecoration.lineThrough,
                             ),
-                            const SizedBox(width: 4),
-                            Text(
-                              "Tap to expand",
-                              style: TextStyle(
-                                fontSize: 10,
-                                fontWeight: FontWeight.w600,
-                                color: Colors.white.withAlpha(160),
-                              ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            '${_formatDateShort(effectiveDate)} • ${widget.reminder.time.format(context)}',
+                            style: TextStyle(
+                              color: AppColors.textSecondary,
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w500,
                             ),
-                          ],
+                            maxLines: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+
+                    // Due Tag
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 9,
+                        vertical: 4.5,
+                      ),
+                      decoration: BoxDecoration(
+                        color: isEnabled
+                            ? (isUrgent
+                                ? (isDark
+                                    ? const Color(0xFFFF5722).withAlpha(45)
+                                    : const Color(0xFFFF5722).withAlpha(25))
+                                : (isDark
+                                    ? Colors.white.withAlpha(20)
+                                    : const Color(0xFFE8EADE)))
+                            : AppColors.surfaceLight,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: isEnabled && isUrgent
+                              ? const Color(0xFFFF5722).withAlpha(70)
+                              : (isDark ? Colors.white.withAlpha(15) : const Color(0xFFD6D9C8)),
+                          width: 0.8,
                         ),
-                        Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Icon(
-                              LucideIcons.chevronLeft,
-                              size: 12,
-                              color: Colors.white.withAlpha(130),
-                            ),
-                            Text(
-                              "Swipe delete",
-                              style: TextStyle(
-                                fontSize: 10,
-                                color: Colors.white.withAlpha(140),
-                              ),
-                            ),
-                          ],
+                      ),
+                      child: Text(
+                        dueText,
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w700,
+                          color: isEnabled
+                              ? (isUrgent
+                                  ? AppColors.primary
+                                  : AppColors.textPrimary)
+                              : AppColors.textSecondary,
                         ),
-                      ],
+                      ),
                     ),
                   ],
                 ),
@@ -1281,19 +1478,25 @@ Future<void> _scheduleAlarm(Reminder reminder) async {
     tz.local,
   );
 
+  final settings = AppSettings.instance;
+  final soundId = settings.selectedSound;
+  final channelId = settings.getChannelIdForSound(soundId);
+  final fullIntent = settings.fullScreenIntent;
+
   await flutterLocalNotificationsPlugin.zonedSchedule(
     reminder.index,
     reminder.title,
     'Reminder: ${reminder.title} is due.',
     tzTarget,
-    const NotificationDetails(
+    NotificationDetails(
       android: AndroidNotificationDetails(
-        'reminder_channel_v2',
-        'Reminders',
+        channelId,
+        'Reminders (${settings.currentSoundOption.name})',
         channelDescription: 'Reminder notifications',
         importance: Importance.max,
         priority: Priority.max,
-        fullScreenIntent: true,
+        sound: RawResourceAndroidNotificationSound(soundId),
+        fullScreenIntent: fullIntent,
         category: AndroidNotificationCategory.alarm,
         visibility: NotificationVisibility.public,
         audioAttributesUsage: AudioAttributesUsage.alarm,

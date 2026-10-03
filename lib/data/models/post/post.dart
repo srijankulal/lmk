@@ -10,12 +10,14 @@ DocData docDataFromJson(String str) => DocData.fromJson(json.decode(str));
 
 class DocData {
   String? documentType;
+  String? category;
   DateTime? issueDate;
   DateTime? expiryDate;
   DateTime? reminderDate;
 
   DocData({
     this.documentType,
+    this.category,
     this.issueDate,
     this.expiryDate,
     this.reminderDate,
@@ -23,6 +25,7 @@ class DocData {
 
   factory DocData.fromJson(Map<String, dynamic> json) => DocData(
     documentType: json["document_type"],
+    category: json["category"],
     issueDate: json["issue_date"] == null
         ? null
         : DateTime.parse(json["issue_date"]),

@@ -164,16 +164,21 @@ class _GlassExpandableFabState extends State<GlassExpandableFab>
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF8B5CF6),
-                    Color(0xFF7C3AED),
+                    Color(0xFFFF7A45),
+                    Color(0xFFFF5722),
+                    Color(0xFFE64A19),
                   ],
+                ),
+                border: Border.all(
+                  color: Colors.white.withAlpha(80),
+                  width: 1.2,
                 ),
                 boxShadow: [
                   BoxShadow(
-                    color: AppColors.primary.withAlpha(90),
-                    blurRadius: 20,
-                    spreadRadius: 1,
-                    offset: const Offset(0, 6),
+                    color: const Color(0xFFFF5722).withAlpha(120),
+                    blurRadius: 24,
+                    spreadRadius: 2,
+                    offset: const Offset(0, 8),
                   ),
                 ],
               ),

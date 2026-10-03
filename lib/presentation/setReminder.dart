@@ -9,6 +9,7 @@ import 'package:lmk/data/local/reminder_local.dart';
 import 'package:lmk/data/models/local/local_reminder.dart';
 import 'package:lmk/data/models/post/post.dart';
 import 'package:lmk/data/repository/remote/create_reminder.dart';
+import 'package:lmk/services/settings_service.dart';
 import 'package:lmk/main.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:timezone/timezone.dart' as tz;
@@ -327,31 +328,21 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
 
     final notificationId = args.documentType.hashCode.abs();
 
-    // Ensure the channel exists with Importance.max before scheduling.
-    // Using a single shared channel avoids the auto-creation low-importance trap.
-    const channel = AndroidNotificationChannel(
-      'reminder_channel_v2',
-      'Reminders',
-      description: 'Reminder notifications',
-      importance: Importance.max,
-      playSound: true,
-      enableVibration: true,
-      showBadge: true,
-      audioAttributesUsage: AudioAttributesUsage.alarm,
-    );
-    await flutterLocalNotificationsPlugin
-        .resolvePlatformSpecificImplementation<AndroidFlutterLocalNotificationsPlugin>()
-        ?.createNotificationChannel(channel);
+    final settings = AppSettings.instance;
+    final soundId = settings.selectedSound;
+    final channelId = settings.getChannelIdForSound(soundId);
+    final fullScreenIntent = settings.fullScreenIntent;
 
-    final androidDetails = const AndroidNotificationDetails(
-      'reminder_channel_v2',
-      'Reminders',
+    final androidDetails = AndroidNotificationDetails(
+      channelId,
+      'Reminders (${settings.currentSoundOption.name})',
       channelDescription: 'Reminder notifications',
       importance: Importance.max,
       playSound: true,
+      sound: RawResourceAndroidNotificationSound(soundId),
       priority: Priority.max,
       enableVibration: true,
-      fullScreenIntent: true,
+      fullScreenIntent: fullScreenIntent,
       category: AndroidNotificationCategory.alarm,
       visibility: NotificationVisibility.public,
       audioAttributesUsage: AudioAttributesUsage.alarm,

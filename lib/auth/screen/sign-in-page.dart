@@ -143,17 +143,27 @@ class _SignInPageState extends State<SignInPage>
                           width: 1.2,
                         ),
                       ),
-                      child: const Center(
-                        child: Icon(
-                          Icons.notifications_active_rounded,
-                          size: 42,
-                          color: AppColors.primary,
+                      child: Center(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(20),
+                          child: Image.asset(
+                            'assets/images/logo.png',
+                            width: 62,
+                            height: 62,
+                            fit: BoxFit.contain,
+                            errorBuilder: (context, error, stackTrace) =>
+                                const Icon(
+                              Icons.notifications_active_rounded,
+                              size: 42,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ),
                       ),
                     ),
                   ),
 
-                  const SizedBox(height: 36),
+                  const SizedBox(height: 32),
 
                   // Welcome Text
                   SlideTransition(
@@ -162,6 +172,31 @@ class _SignInPageState extends State<SignInPage>
                       opacity: _fadeAnimation,
                       child: Column(
                         children: [
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Text(
+                                "LMK",
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  fontWeight: FontWeight.w900,
+                                  letterSpacing: 2.0,
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                "• LET ME KNOW",
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 1.5,
+                                  color: AppColors.textTertiary,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 10),
                           Text(
                             "Welcome Back",
                             style: Theme.of(context).textTheme.headlineMedium

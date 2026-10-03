@@ -49,3 +49,5 @@ app.*.map.json
 !.fvm/fvm_config.json
 
 AI_CONTEXT.md
+.agents/
+.env

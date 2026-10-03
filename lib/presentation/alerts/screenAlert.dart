@@ -44,6 +44,7 @@ class _ScreenalertState extends State<Screenalert>
       builder: (context, _) {
         final payloadValue = widget.payload ?? 'Document|Expiring Soon';
         final parts = payloadValue.split('|');
+        final isDark = ThemeController.instance.isDarkMode;
         final documentType = parts.isNotEmpty && parts[0].isNotEmpty
             ? parts[0]
             : 'Document Reminder';
@@ -96,35 +97,45 @@ class _ScreenalertState extends State<Screenalert>
                   ScaleTransition(
                     scale: _scaleAnimation,
                     child: Container(
-                      padding: const EdgeInsets.all(26),
+                      width: 110,
+                      height: 110,
+                      padding: const EdgeInsets.all(18),
                       decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: AppColors.primary.withAlpha(25),
+                        borderRadius: BorderRadius.circular(32),
+                        color: isDark ? const Color(0xFF1E2729) : Colors.white,
                         border: Border.all(
                           color: AppColors.primary.withAlpha(90),
                           width: 2,
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: AppColors.primary.withAlpha(40),
-                            blurRadius: 20,
-                            offset: const Offset(0, 6),
+                            color: AppColors.primary.withAlpha(50),
+                            blurRadius: 28,
+                            offset: const Offset(0, 8),
                           ),
                         ],
                       ),
-                      child: const Icon(
-                        Icons.alarm_on_rounded,
-                        color: AppColors.primary,
-                        size: 68,
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(20),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          fit: BoxFit.contain,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                            Icons.alarm_on_rounded,
+                            color: AppColors.primary,
+                            size: 68,
+                          ),
+                        ),
                       ),
                     ),
                   ),
-                  const SizedBox(height: 30),
+                  const SizedBox(height: 28),
                   Text(
-                    'REMINDER ALERT',
+                    'LMK • LET ME KNOW',
                     style: TextStyle(
                       fontSize: 12,
-                      letterSpacing: 2.0,
+                      letterSpacing: 2.2,
                       fontWeight: FontWeight.w800,
                       color: AppColors.primary,
                     ),

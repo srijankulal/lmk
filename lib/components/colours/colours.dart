@@ -52,63 +52,66 @@ class ThemeController extends ChangeNotifier {
 /// - Light: Soft alabaster lavender canvas with vibrant sunset gradient highlights
 /// - Dark: Deep obsidian velvet canvas with high contrast and glowing gradient highlights
 class AppColors {
-  // 🌆 Primary brand colors
-  static const Color primary = Color(0xFF8B5CF6); // Modern Iris / Lavender
-  static const Color primaryDark = Color(0xFF1E1B2E);
-  static const Color primaryHover = Color(0xFF7C3AED);
-  static const Color secondary = Color(0xFF1E1B2E);
-  static const Color accent = Color(0xFFF59E0B); // Honey Amber Highlight
-  static const Color accentCoral = Color(0xFFFF6B6B);
-  static const Color accentLavender = Color(0xFFB8A5E8);
+  // 🌆 Primary brand colors (Extracted directly from LMK 3D Logo)
+  static const Color primary = Color(0xFFFF5722); // Vibrant LMK Orange
+  static const Color primaryDark = Color(0xFFD84315);
+  static const Color primaryHover = Color(0xFFFF7A45);
+  static const Color secondary = Color(0xFF2E3A3B); // Charcoal Slate from Logo
+  static const Color accent = Color(0xFFFF5722); // LMK Orange Highlight
+  static const Color accentCoral = Color(0xFFFF7A45);
+  static const Color accentAmber = Color(0xFFF59E0B);
+  static const Color charcoalSlate = Color(0xFF2E3A3B);
+  static const Color charcoalDeep = Color(0xFF1E2526);
+  static const Color obsidianDark = Color(0xFF101516);
 
   // 🪄 Dynamic Canvas & Surfaces
   static Color get background =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xFF121019) // Velvet obsidian matching Reference Screen 3
-          : const Color(0xFFF4EFF8); // Soft alabaster lavender
+          ? const Color(0xFF101516) // Deep Obsidian Charcoal
+          : const Color(0xFFF1F2E8); // Warm Bone / Linen Paper Cream
 
   static Color get backgroundCard =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xFF1E1B29)
-          : const Color(0xFFFFFFFF);
+          ? const Color(0xFF181F20)
+          : const Color(0xFFFBFBFA);
 
   static Color get surface =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xFF1E1B29)
-          : const Color(0xFFFFFFFF);
+          ? const Color(0xFF181F20)
+          : const Color(0xFFFBFBFA);
 
   static Color get surfaceGlass =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xF01E1B29)
-          : const Color(0xF2FFFFFF);
+          ? const Color(0xB31E2628) // Translucent Frosted Dark Glass
+          : const Color(0xF2FBFBFA); // Soft Translucent Paper
 
-  static Color get surfaceDark => const Color(0xFF1E1B2E);
+  static Color get surfaceDark => const Color(0xFF181F20);
 
   static Color get surfaceLight =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xFF282436)
-          : const Color(0xFFEDE7F4);
+          ? const Color(0xFF222B2D)
+          : const Color(0xFFE8EADE);
 
   static Color get surfaceMuted =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xFF231F30)
-          : const Color(0xFFECE7F4);
+          ? const Color(0xFF1B2324)
+          : const Color(0xFFE2E4D8);
 
   // ✏️ Dynamic Text colors
   static Color get textPrimary =>
       ThemeController.instance.isDarkMode
           ? const Color(0xFFFFFFFF)
-          : const Color(0xFF191622);
+          : const Color(0xFF1C2324); // Ink Charcoal
 
   static Color get textSecondary =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xFFA29BB5)
-          : const Color(0xFF706A82);
+          ? const Color(0xFFD8DAD0)
+          : const Color(0xFF606967);
 
   static Color get textTertiary =>
       ThemeController.instance.isDarkMode
-          ? const Color(0xFF6E6882)
-          : const Color(0xFF9E98AD);
+          ? const Color(0xFF838F8D)
+          : const Color(0xFF8C9490);
 
   static const Color textOnPrimary = Color(0xFFFFFFFF);
 
@@ -121,101 +124,189 @@ class AppColors {
   // 🧱 Dynamic Borders, shadows, and states
   static Color get border =>
       ThemeController.instance.isDarkMode
-          ? const Color(0x28FFFFFF)
-          : const Color(0x181C1924);
+          ? const Color(0x2BFFFFFF) // Top specular highlight
+          : const Color(0xFFE2E4D8); // Subtle warm hairline border
 
   static Color get borderSubtle =>
       ThemeController.instance.isDarkMode
           ? const Color(0x18FFFFFF)
-          : const Color(0x0E1C1924);
+          : const Color(0x1F2E3A3B);
 
-  static const Color borderFocus = Color(0x808B5CF6);
+  static const Color borderFocus = Color(0x80FF5722);
 
   static Color get shadow =>
       ThemeController.instance.isDarkMode
-          ? const Color(0x60000000)
-          : const Color(0x141C1924);
+          ? const Color(0x80000000)
+          : const Color(0x122E3A3B);
 
-  static const Color disabled = Color(0xFF9E98AD);
+  static const Color disabled = Color(0xFF8C9490);
 
-  // 🌅 Signature Gradient Card Palettes (Expressive & Minimalist)
+  // 🌅 Signature Gradient Card Palettes (Tactile Editorial & 3D Glass)
+  static const LinearGradient orangeGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFFFF5722), Color(0xFFFF7A45)],
+  );
+
+  static const LinearGradient charcoalHeroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xFF2E3A3B), Color(0xFF1E2526)],
+  );
+
+  static const LinearGradient darkGlassHeroGradient = LinearGradient(
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+    colors: [Color(0xCC2A3537), Color(0x991E2628)],
+  );
+
   static const List<LinearGradient> lightCardGradients = [
-    // 1. Sunset Lavender (Hero Card in reference image Screen 1)
+    // 1. Charcoal Slate Hero (High-contrast from logo)
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF967FE8), Color(0xFFE58F9A), Color(0xFFF6C665)],
-      stops: [0.0, 0.52, 1.0],
+      colors: [Color(0xFF2E3A3B), Color(0xFF1E2526)],
     ),
-    // 2. Warm Honey Amber (Summary card in reference image Screen 2)
+    // 2. Vibrant LMK Orange Sunset
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFFE89838), Color(0xFFF5BF56)],
+      colors: [Color(0xFFFF5722), Color(0xFFFF8A50)],
     ),
-    // 3. Blush Mauve (Statistic card in reference image Screen 2)
+    // 3. Warm Honey Amber
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFFCA829F), Color(0xFFDF9DB8)],
+      colors: [Color(0xFFD97706), Color(0xFFF59E0B)],
     ),
-    // 4. Cool Iris Twilight
+    // 4. Olive Sage
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF7261DD), Color(0xFF9C8BF2)],
+      colors: [Color(0xFF3B5249), Color(0xFF517265)],
     ),
-    // 5. Emerald Jade
+    // 5. Deep Slate Twilight
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF459A89), Color(0xFF72C2B1)],
+      colors: [Color(0xFF333E50), Color(0xFF475569)],
     ),
-    // 6. Sunset Coral
+    // 6. Warm Terracotta
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFFDE6350), Color(0xFFF2976D)],
+      colors: [Color(0xFFB45309), Color(0xFFD97706)],
+    ),
+    // 7. Midnight Indigo
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF312E81), Color(0xFF4338CA)],
+    ),
+    // 8. Emerald Jade
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF047857), Color(0xFF059669)],
+    ),
+    // 9. Royal Velvet Plum
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF6D28D9), Color(0xFF7C3AED)],
+    ),
+    // 10. Crimson Rose
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFFBE123C), Color(0xFFE11D48)],
+    ),
+    // 11. Oceanic Cyan
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF0284C7), Color(0xFF0EA5E9)],
+    ),
+    // 12. Warm Bronze
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF9A3412), Color(0xFFC2410C)],
     ),
   ];
 
   static const List<LinearGradient> darkCardGradients = [
-    // 1. Velvet Sunset Lavender (Deep jewel tones with high contrast for obsidian)
+    // 1. Dark 3D Frosted Glass Hero
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF6E56CE), Color(0xFFA8516F), Color(0xFFC7842B)],
-      stops: [0.0, 0.52, 1.0],
+      colors: [Color(0xCC263234), Color(0x991A2223)],
     ),
-    // 2. Deep Honey Amber (Matching Reference Screen 3 glowing amber)
+    // 2. Radiant LMK Orange
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFFB86B14), Color(0xFFD9962B)],
+      colors: [Color(0xFFD84315), Color(0xFFFF5722)],
     ),
-    // 3. Velvet Mauve
+    // 3. Glowing Amber
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF8E4467), Color(0xFFB25B81)],
+      colors: [Color(0xFFB45309), Color(0xFFF59E0B)],
     ),
-    // 4. Velvet Iris Twilight
+    // 4. Dark Emerald Slate
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF523EB8), Color(0xFF7763D9)],
+      colors: [Color(0xFF134E4A), Color(0xFF0F766E)],
     ),
-    // 5. Velvet Emerald Jade
+    // 5. Dark Twilight
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFF2B7062), Color(0xFF4D9B8C)],
+      colors: [Color(0xFF1E293B), Color(0xFF334155)],
     ),
-    // 6. Velvet Sunset Coral
+    // 6. Deep Obsidian Charcoal
     LinearGradient(
       begin: Alignment.topLeft,
       end: Alignment.bottomRight,
-      colors: [Color(0xFFA83E2D), Color(0xFFCA6947)],
+      colors: [Color(0xFF1F292B), Color(0xFF141C1D)],
+    ),
+    // 7. Midnight Indigo
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF1E1B4B), Color(0xFF2E2B5F)],
+    ),
+    // 8. Emerald Jade
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF064E3B), Color(0xFF0D624B)],
+    ),
+    // 9. Royal Velvet Plum
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF4C1D95), Color(0xFF5B21B6)],
+    ),
+    // 10. Crimson Rose
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF881337), Color(0xFF9F1239)],
+    ),
+    // 11. Oceanic Cyan
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF075985), Color(0xFF0C4A6E)],
+    ),
+    // 12. Warm Bronze
+    LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [Color(0xFF7C2D12), Color(0xFF8C3316)],
     ),
   ];
 

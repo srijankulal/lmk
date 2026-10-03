@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LMK • Smart Reminder &amp; Task Tracker</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Hanken Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:wght@400..700&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-container": "#000703",
+            "on-secondary-fixed-variant": "#653e00",
+            "primary": "#c0c1ff",
+            "surface-bright": "#38393f",
+            "surface-container-low": "#1a1b21",
+            "on-primary": "#1000a9",
+            "surface": "#121318",
+            "on-primary-fixed": "#07006c",
+            "error-container": "#93000a",
+            "primary-container": "#8083ff",
+            "on-tertiary-fixed-variant": "#005236",
+            "surface-tint": "#c0c1ff",
+            "on-background": "#e3e1e9",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary": "#4edea3",
+            "primary-fixed-dim": "#c0c1ff",
+            "secondary-fixed-dim": "#ffb95f",
+            "on-error": "#690005",
+            "outline": "#908fa0",
+            "on-primary-container": "#0d0096",
+            "on-error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "secondary-fixed": "#ffddb8",
+            "secondary-container": "#ee9800",
+            "secondary": "#ffb95f",
+            "surface-container-high": "#292a2f",
+            "surface-container-highest": "#34343a",
+            "background": "#121318",
+            "on-tertiary-fixed": "#002113",
+            "surface-container-lowest": "#0d0e13",
+            "outline-variant": "#464554",
+            "surface-dim": "#121318",
+            "on-surface": "#e3e1e9",
+            "on-tertiary": "#003824",
+            "inverse-on-surface": "#2f3036",
+            "primary-fixed": "#e1e0ff",
+            "surface-container": "#1e1f25",
+            "inverse-primary": "#494bd6",
+            "on-secondary": "#472a00",
+            "tertiary-container": "#00885d",
+            "on-surface-variant": "#c7c4d7",
+            "inverse-surface": "#e3e1e9",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface-variant": "#34343a",
+            "error": "#ffb4ab",
+            "on-secondary-fixed": "#2a1700",
+            "on-secondary-container": "#5b3800"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "fontFamily": {
+            "display": ["Hanken Grotesk"],
+            "label-mono-md": ["JetBrains Mono"],
+            "display-mobile": ["Hanken Grotesk"],
+            "headline-sm": ["Hanken Grotesk"],
+            "label-ui": ["Hanken Grotesk"],
+            "headline-md": ["Hanken Grotesk"],
+            "body-md": ["Hanken Grotesk"],
+            "label-mono-sm": ["JetBrains Mono"],
+            "body-sm": ["Hanken Grotesk"],
+            "body-lg": ["Hanken Grotesk"],
+            "headline-lg": ["Hanken Grotesk"]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .custom-inner-bevel {
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 12px 36px -4px rgba(0, 0, 0, 0.75);
+    }
+    .wallet-card-shadow {
+      box-shadow: 0 -8px 24px -2px rgba(0, 0, 0, 0.6), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+    }
+    .glow-accent {
+      box-shadow: 0 8px 30px -4px rgba(128, 131, 255, 0.45);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen selection:bg-primary-container selection:text-on-primary-container flex flex-col items-center justify-start pb-28">
+<!-- Mobile Screen Container -->
+<div class="w-full max-w-md min-h-screen bg-background relative flex flex-col px-0 overflow-x-hidden">
+<!-- Header Navigation -->
+<header class="bg-background/80 backdrop-blur-xl sticky top-0 z-40 px-5 pt-4 pb-3">
+<div class="flex justify-between items-center w-full">
+<!-- Left: Profile Avatar with Status & Name -->
+<div class="flex items-center gap-3">
+<div class="relative w-9 h-9 rounded-full ring-1 ring-white/10 overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="User avatar portrait" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAL4sfOoz1wiyy0ala4sLgT45ReOZW7d_9Ti4cp3IhSDO4yBGOs-IGWuGHDi4OtRjV7g0nd2CsNfWVUABvqGY0BZj_DW_agubO3adsUT6MzFKWnSOhSf-g79lJWeA0BwrVy6Fy44XoixRRa1plBC64bWBaksm-hoZ5YbZtqdBw7dh9bX4_lXF9b0WAIvoGIYyg5INghrFL8pXAnZD5Y-S6p4A312xq7y_kkfbSssIEyLey5MMaeBGLm2QJUibDT88Vsp3bdBdM1Sg"/>
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-tertiary rounded-full ring-2 ring-background"></span>
+</div>
+<span class="text-headline-sm font-bold text-on-surface tracking-tight">Srijan</span>
+</div>
+<!-- Right: Subtle glass theme & search buttons -->
+<div class="flex items-center gap-2">
+<button aria-label="Toggle Theme" class="w-9 h-9 rounded-full bg-surface-container-high/50 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center border border-white/5 active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[19px]">dark_mode</span>
+</button>
+<button aria-label="Search" class="w-9 h-9 rounded-full bg-surface-container-high/50 hover:bg-surface-container-high text-on-surface-variant hover:text-on-surface flex items-center justify-center border border-white/5 active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[19px]">search</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-5 pt-3 space-y-6">
+<!-- Headline & Minimalist Filter Chips -->
+<section class="space-y-4">
+<h1 class="text-3xl font-bold tracking-tight text-on-surface">Cards</h1>
+<!-- Filter Pills -->
+<div class="flex items-center gap-2">
+<button class="px-4 py-1.5 rounded-full bg-surface-container-highest text-on-surface text-label-ui font-semibold border border-white/10 active:scale-95 transition-all" type="button">
+          All
+        </button>
+<button class="px-4 py-1.5 rounded-full bg-transparent text-on-surface-variant hover:text-on-surface border border-outline-variant/30 text-label-ui active:scale-95 transition-all" type="button">
+          Active
+        </button>
+<button class="px-4 py-1.5 rounded-full bg-transparent text-on-surface-variant hover:text-on-surface border border-outline-variant/30 text-label-ui active:scale-95 transition-all" type="button">
+          Disabled
+        </button>
+</div>
+</section>
+<!-- Interactive Card Deck (Apple Wallet Clean Aesthetic) -->
+<section class="space-y-0 pt-1">
+<!-- Featured Top Card -->
+<article class="relative z-30 bg-gradient-to-b from-[#181a24] to-[#12141c] rounded-3xl p-6 border border-white/10 custom-inner-bevel">
+<!-- Top Row: Date Pill & Tactile iOS Switch -->
+<div class="flex items-center justify-between pb-5">
+<div class="flex items-center gap-2 bg-surface-container-high/70 px-3 py-1.5 rounded-full border border-white/5 text-label-mono-sm font-medium text-on-surface-variant">
+<span class="material-symbols-outlined text-[15px] text-secondary">calendar_today</span>
+<span>Tomorrow • 10:00 AM</span>
+</div>
+<!-- iOS Style Switch (ON) -->
+<button aria-label="Toggle reminder state" class="w-11 h-6 bg-tertiary rounded-full p-0.5 flex items-center justify-end transition-colors duration-200 cursor-pointer shadow-inner" type="button">
+<span class="w-5 h-5 bg-on-tertiary-container rounded-full shadow-md"></span>
+</button>
+</div>
+<!-- Center: Bold, High-Contrast Clean Title -->
+<div class="py-3">
+<h2 class="text-2xl font-bold text-on-surface tracking-tight leading-tight">
+            Passport Renewal
+          </h2>
+</div>
+<!-- Bottom Row: Status Badges & Quick Action Buttons -->
+<div class="pt-5 flex items-center justify-between border-t border-white/5">
+<div class="flex items-center gap-2">
+<span class="px-2.5 py-0.5 rounded-full bg-secondary/15 border border-secondary/30 text-secondary text-[11px] font-label-mono-sm font-bold uppercase tracking-wider">
+              URGENT
+            </span>
+<span class="px-2.5 py-0.5 rounded-full bg-surface-container-high/60 border border-white/5 text-on-surface-variant text-[11px] font-label-mono-sm">
+              2 days left
+            </span>
+</div>
+<!-- Subtle Circular Action Buttons -->
+<div class="flex items-center gap-1.5">
+<button aria-label="Edit reminder" class="w-8 h-8 rounded-full bg-surface-container-high/50 hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface border border-white/5 active:scale-90 transition-all">
+<span class="material-symbols-outlined text-[16px]">edit</span>
+</button>
+<button aria-label="Delete reminder" class="w-8 h-8 rounded-full bg-surface-container-high/50 hover:bg-surface-container-high flex items-center justify-center text-error hover:text-on-error-container border border-white/5 active:scale-90 transition-all">
+<span class="material-symbols-outlined text-[16px]">delete</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Cascading Overlapping Stack (Apple Wallet Style Stack) -->
+<div class="relative -mt-4 space-y-0">
+<!-- Card 2: Health Insurance -->
+<div class="relative z-20 bg-gradient-to-b from-[#1a202c] to-[#141923] rounded-3xl px-5 py-4 wallet-card-shadow border border-white/10 hover:-translate-y-2 transition-transform duration-200 cursor-pointer">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-2xl bg-tertiary/15 border border-tertiary/30 text-tertiary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">shield</span>
+</div>
+<h3 class="text-body-lg font-bold text-on-surface">Health Insurance</h3>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-tertiary/10 border border-tertiary/20 text-tertiary text-label-mono-sm font-medium">
+              Due in 5d
+            </span>
+</div>
+<!-- Card spacer for peek depth -->
+<div class="h-4"></div>
+</div>
+<!-- Card 3: Vehicle Emission Test -->
+<div class="relative z-10 -mt-6 bg-gradient-to-b from-[#222129] to-[#18171f] rounded-3xl px-5 py-4 wallet-card-shadow border border-white/10 hover:-translate-y-2 transition-transform duration-200 cursor-pointer">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-2xl bg-secondary/15 border border-secondary/30 text-secondary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+</div>
+<h3 class="text-body-lg font-bold text-on-surface">Vehicle Emission Test</h3>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-secondary/10 border border-secondary/20 text-secondary text-label-mono-sm font-medium">
+              Due in 12d
+            </span>
+</div>
+<!-- Card spacer for peek depth -->
+<div class="h-4"></div>
+</div>
+<!-- Card 4: Apartment Lease -->
+<div class="relative z-0 -mt-6 bg-gradient-to-b from-[#1d1f2b] to-[#151720] rounded-3xl px-5 py-4 wallet-card-shadow border border-white/10 hover:-translate-y-2 transition-transform duration-200 cursor-pointer">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-2xl bg-primary/15 border border-primary/30 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">home</span>
+</div>
+<h3 class="text-body-lg font-bold text-on-surface">Apartment Lease</h3>
+</div>
+<span class="px-2.5 py-1 rounded-full bg-surface-container-highest border border-white/5 text-on-surface-variant text-label-mono-sm font-medium">
+              Due next month
+            </span>
+</div>
+<div class="h-2"></div>
+</div>
+</div>
+</section>
+</main>
+<!-- Sleek Floating Action Button -->
+<aside class="fixed bottom-20 right-5 z-40 pointer-events-auto">
+<button aria-label="Create New Reminder" class="w-14 h-14 rounded-full bg-primary-container text-on-primary-container flex items-center justify-center glow-accent hover:opacity-95 active:scale-90 transition-all duration-150" type="button">
+<span class="material-symbols-outlined text-[28px] font-semibold">add</span>
+</button>
+</aside>
+<!-- Clean Bottom Navigation Bar -->
+<nav class="bg-surface/80 backdrop-blur-xl border-t border-white/5 fixed bottom-0 left-0 right-0 w-full z-50 flex justify-around items-center px-4 py-2 max-w-md mx-auto">
+<!-- Tab 1: Reminders (Active) -->
+<button class="flex flex-col items-center justify-center text-primary font-semibold py-1 px-3 active:scale-90 transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">alarm</span>
+<span class="text-label-ui mt-0.5">Reminders</span>
+</button>
+<!-- Tab 2: Calendar -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface py-1 px-3 active:scale-90 transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]">calendar_today</span>
+<span class="text-label-ui mt-0.5">Calendar</span>
+</button>
+<!-- Tab 3: Intelligence -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface py-1 px-3 active:scale-90 transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]">auto_awesome</span>
+<span class="text-label-ui mt-0.5">Intelligence</span>
+</button>
+<!-- Tab 4: Settings -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant hover:text-on-surface py-1 px-3 active:scale-90 transition-all" type="button">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+<span class="text-label-ui mt-0.5">Settings</span>
+</button>
+</nav>
+</div>
+</body></html>

@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>LMK • Smart Reminder &amp; Task Tracker</title>
+<!-- Material Symbols Outlined -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Google Fonts: Hanken Grotesk & JetBrains Mono -->
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:ital,wght@0,300..900;1,300..900&amp;family=JetBrains+Mono:wght@400..700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          "colors": {
+            "on-tertiary-container": "#000703",
+            "on-secondary-fixed-variant": "#653e00",
+            "primary": "#c0c1ff",
+            "surface-bright": "#38393f",
+            "surface-container-low": "#1a1b21",
+            "on-primary": "#1000a9",
+            "surface": "#121318",
+            "on-primary-fixed": "#07006c",
+            "error-container": "#93000a",
+            "primary-container": "#8083ff",
+            "on-tertiary-fixed-variant": "#005236",
+            "surface-tint": "#c0c1ff",
+            "on-background": "#e3e1e9",
+            "tertiary-fixed": "#6ffbbe",
+            "tertiary": "#4edea3",
+            "primary-fixed-dim": "#c0c1ff",
+            "secondary-fixed-dim": "#ffb95f",
+            "on-error": "#690005",
+            "outline": "#908fa0",
+            "on-primary-container": "#0d0096",
+            "on-error-container": "#ffdad6",
+            "on-primary-fixed-variant": "#2f2ebe",
+            "secondary-fixed": "#ffddb8",
+            "secondary-container": "#ee9800",
+            "secondary": "#ffb95f",
+            "surface-container-high": "#292a2f",
+            "surface-container-highest": "#34343a",
+            "background": "#121318",
+            "on-tertiary-fixed": "#002113",
+            "surface-container-lowest": "#0d0e13",
+            "outline-variant": "#464554",
+            "surface-dim": "#121318",
+            "on-surface": "#e3e1e9",
+            "on-tertiary": "#003824",
+            "inverse-on-surface": "#2f3036",
+            "primary-fixed": "#e1e0ff",
+            "surface-container": "#1e1f25",
+            "inverse-primary": "#494bd6",
+            "on-secondary": "#472a00",
+            "tertiary-container": "#00885d",
+            "on-surface-variant": "#c7c4d7",
+            "inverse-surface": "#e3e1e9",
+            "tertiary-fixed-dim": "#4edea3",
+            "surface-variant": "#34343a",
+            "error": "#ffb4ab",
+            "on-secondary-fixed": "#2a1700",
+            "on-secondary-container": "#5b3800"
+          },
+          "borderRadius": {
+            "DEFAULT": "0.25rem",
+            "lg": "0.5rem",
+            "xl": "0.75rem",
+            "full": "9999px"
+          },
+          "spacing": {
+            "margin": "1.5rem",
+            "margin-mobile": "1rem",
+            "space-xl": "2rem",
+            "space-sm": "0.5rem",
+            "gutter": "1rem",
+            "space-xs": "0.25rem",
+            "gutter-mobile": "0.75rem",
+            "space-lg": "1.25rem",
+            "space-md": "0.875rem"
+          },
+          "fontFamily": {
+            "display": ["Hanken Grotesk"],
+            "label-mono-md": ["JetBrains Mono"],
+            "display-mobile": ["Hanken Grotesk"],
+            "headline-sm": ["Hanken Grotesk"],
+            "label-ui": ["Hanken Grotesk"],
+            "headline-md": ["Hanken Grotesk"],
+            "body-md": ["Hanken Grotesk"],
+            "label-mono-sm": ["JetBrains Mono"],
+            "body-sm": ["Hanken Grotesk"],
+            "body-lg": ["Hanken Grotesk"],
+            "headline-lg": ["Hanken Grotesk"]
+          },
+          "fontSize": {
+            "display": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.03em", "fontWeight": "700"}],
+            "label-mono-md": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+            "display-mobile": ["32px", {"lineHeight": "38px", "letterSpacing": "-0.025em", "fontWeight": "700"}],
+            "headline-sm": ["18px", {"lineHeight": "24px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+            "label-ui": ["12px", {"lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "600"}],
+            "headline-md": ["22px", {"lineHeight": "28px", "letterSpacing": "-0.015em", "fontWeight": "600"}],
+            "body-md": ["14px", {"lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400"}],
+            "label-mono-sm": ["11px", {"lineHeight": "14px", "letterSpacing": "0.04em", "fontWeight": "500"}],
+            "body-sm": ["13px", {"lineHeight": "18px", "letterSpacing": "0em", "fontWeight": "400"}],
+            "body-lg": ["16px", {"lineHeight": "24px", "letterSpacing": "-0.005em", "fontWeight": "400"}],
+            "headline-lg": ["28px", {"lineHeight": "34px", "letterSpacing": "-0.02em", "fontWeight": "600"}]
+          }
+        },
+      },
+    }
+  </script>
+<style>
+    .material-symbols-outlined {
+      font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
+    .custom-inner-bevel {
+      box-shadow: inset 0 1px 0 0 rgba(255, 255, 255, 0.12), 0 8px 32px -4px rgba(0, 0, 0, 0.65);
+    }
+    .custom-luminous-amber {
+      box-shadow: 0 0 24px -4px rgba(245, 158, 11, 0.22);
+    }
+    .wallet-card-shadow {
+      box-shadow: 0 -4px 18px -2px rgba(0, 0, 0, 0.5), inset 0 1px 0 0 rgba(255, 255, 255, 0.08);
+    }
+  </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background text-on-surface font-body-md antialiased min-h-screen selection:bg-primary-container selection:text-on-primary-container flex flex-col items-center justify-start pb-28">
+<!-- Mobile Screen Container -->
+<div class="w-full max-w-md min-h-screen bg-background relative flex flex-col px-0 overflow-x-hidden">
+<!-- 1. TopAppBar (Shared Component Implementation) -->
+<header class="bg-surface/85 backdrop-blur-md dark:bg-surface/85 docked full-width top-0 sticky z-40 shadow-sm border-b border-outline-variant/30 dark:border-outline-variant/30">
+<div class="flex justify-between items-center w-full px-margin-mobile py-space-sm max-w-md mx-auto">
+<!-- Leading: Profile Avatar with Live Status -->
+<div class="flex items-center gap-2.5">
+<div class="relative w-9 h-9 rounded-full ring-1 ring-outline/30 overflow-hidden bg-surface-container flex items-center justify-center">
+<img class="w-full h-full object-cover" data-alt="A refined minimalist high-contrast monochrome portrait of a young tech professional with sharp focus, soft moody cinematic studio lighting, deep obsidian dark aesthetic with subtle cool undertones matching high-caliber personal dashboard styling." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAL4sfOoz1wiyy0ala4sLgT45ReOZW7d_9Ti4cp3IhSDO4yBGOs-IGWuGHDi4OtRjV7g0nd2CsNfWVUABvqGY0BZj_DW_agubO3adsUT6MzFKWnSOhSf-g79lJWeA0BwrVy6Fy44XoixRRa1plBC64bWBaksm-hoZ5YbZtqdBw7dh9bX4_lXF9b0WAIvoGIYyg5INghrFL8pXAnZD5Y-S6p4A312xq7y_kkfbSssIEyLey5MMaeBGLm2QJUibDT88Vsp3bdBdM1Sg"/>
+<!-- Luminous emerald green status indicator -->
+<span class="absolute bottom-0 right-0 w-2.5 h-2.5 bg-tertiary rounded-full ring-2 ring-surface animate-pulse"></span>
+</div>
+<div class="flex flex-col">
+<span class="text-label-mono-sm font-label-mono-sm text-on-surface-variant flex items-center gap-1">
+              Welcome back 👋
+            </span>
+<span class="text-headline-sm font-headline-sm font-bold text-on-surface dark:text-on-surface leading-tight">
+              Srijan
+            </span>
+</div>
+</div>
+<!-- Trailing Action Cluster -->
+<div class="flex items-center gap-1.5">
+<!-- Live Online Connectivity State -->
+<div class="w-8 h-8 rounded-full bg-surface-container-high/60 backdrop-blur-md flex items-center justify-center text-tertiary border border-outline-variant/30" title="Connected to Cloud Sync">
+<span class="material-symbols-outlined text-[17px]">wifi</span>
+</div>
+<!-- Theme Toggle Button -->
+<button aria-label="Toggle Theme" class="w-8 h-8 rounded-full bg-surface-container-high/60 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-on-surface transition-colors active:scale-95 duration-150 border border-outline-variant/30" type="button">
+<span class="material-symbols-outlined text-[17px]">dark_mode</span>
+</button>
+<!-- Search Button (From Shared Component JSON) -->
+<button aria-label="Search reminders" class="w-8 h-8 rounded-full bg-surface-container-high/60 backdrop-blur-md flex items-center justify-center text-on-surface-variant hover:bg-surface-container-high hover:text-primary transition-colors active:scale-95 duration-150 border border-outline-variant/30" type="button">
+<span class="material-symbols-outlined text-[18px]">search</span>
+</button>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 px-margin-mobile pt-3 pb-8 space-y-4">
+<!-- 2. Section Title & Filter Bar -->
+<section class="space-y-3">
+<div class="flex items-center justify-between">
+<div>
+<div class="flex items-center gap-2">
+<h1 class="text-headline-lg font-headline-lg font-bold text-on-surface tracking-tight">Cards</h1>
+<span class="px-2 py-0.5 rounded-full bg-surface-container-highest border border-outline-variant/40 text-label-mono-sm font-label-mono-sm text-primary font-semibold">
+                4 Total
+              </span>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant">Your reminders &amp; tasks</p>
+</div>
+<!-- Quick Action Icon: Add Category View -->
+<button class="w-8 h-8 rounded-lg bg-surface-container hover:bg-surface-container-high text-on-surface-variant flex items-center justify-center border border-outline-variant/30 transition-colors">
+<span class="material-symbols-outlined text-[18px]">tune</span>
+</button>
+</div>
+<!-- Filter Chips (Horizontally Scrollable Capsule Pills) -->
+<div class="flex items-center gap-2 overflow-x-auto no-scrollbar py-0.5">
+<!-- All 4 (Active Filled) -->
+<button class="px-3.5 py-1.5 rounded-full bg-primary-container text-on-primary-container text-label-ui font-label-ui font-semibold shadow-sm flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-all" type="button">
+<span>All 4</span>
+</button>
+<!-- Active 3 (Subtle Border/Surface with Green Dot) -->
+<button class="px-3 py-1.5 rounded-full bg-surface-container-low text-on-surface hover:bg-surface-container border border-outline-variant/40 text-label-ui font-label-ui flex items-center gap-2 flex-shrink-0 active:scale-95 transition-all" type="button">
+<span class="w-1.5 h-1.5 rounded-full bg-tertiary"></span>
+<span>Active 3</span>
+</button>
+<!-- Disabled 1 (Muted Surface) -->
+<button class="px-3 py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant hover:text-on-surface border border-outline-variant/20 text-label-ui font-label-ui flex items-center gap-1.5 flex-shrink-0 active:scale-95 transition-all" type="button">
+<span>Disabled 1</span>
+</button>
+<!-- Starred -->
+<button class="px-3 py-1.5 rounded-full bg-surface-container-lowest text-on-surface-variant hover:text-on-surface border border-outline-variant/20 text-label-ui font-label-ui flex items-center gap-1 flex-shrink-0 active:scale-95 transition-all" type="button">
+<span class="material-symbols-outlined text-[14px] text-secondary">star</span>
+<span>Priority</span>
+</button>
+</div>
+</section>
+<!-- 3. Upcoming Reminder Highlight (Compact Ambient Banner) -->
+<section>
+<div class="w-full bg-gradient-to-r from-surface-container via-surface-container-high/70 to-surface-container p-2.5 rounded-2xl border border-primary/20 backdrop-blur-md flex items-center justify-between gap-2.5 shadow-sm hover:border-primary/40 transition-colors group cursor-pointer">
+<div class="flex items-center gap-2.5 min-w-0">
+<!-- Pulsing Notification Bell -->
+<div class="relative w-8 h-8 rounded-xl bg-primary/10 border border-primary/30 flex items-center justify-center text-primary flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">notifications_active</span>
+<span class="absolute -top-0.5 -right-0.5 w-2 h-2 rounded-full bg-secondary ring-2 ring-surface"></span>
+</div>
+<div class="truncate">
+<div class="text-label-mono-sm font-label-mono-sm text-secondary font-medium tracking-wide flex items-center gap-1">
+<span>NEXT ALERT</span>
+<span>•</span>
+<span class="text-on-surface-variant font-normal">14 Oct, 09:30 AM</span>
+</div>
+<p class="text-body-sm font-body-sm font-medium text-on-surface truncate group-hover:text-primary transition-colors">
+                Passport Renewal &amp; Visa Docs
+              </p>
+</div>
+</div>
+<div class="flex-shrink-0 text-on-surface-variant group-hover:translate-x-0.5 transition-transform">
+<span class="material-symbols-outlined text-[18px]">chevron_right</span>
+</div>
+</div>
+</section>
+<!-- 4. Interactive Card Deck (Apple Wallet Style Stack) -->
+<section class="pt-1">
+<!-- Top Featured Active Card -->
+<article class="relative z-30 bg-[#12151E] rounded-3xl p-5 border border-white/10 custom-inner-bevel custom-luminous-amber transition-all duration-300">
+<!-- Amber Left Edge Micro-Indicator -->
+<div class="absolute left-0 top-6 bottom-6 w-1 rounded-r-full bg-secondary"></div>
+<!-- Top Row: Date Pill & Tactile iOS Switch -->
+<div class="flex items-center justify-between pb-3.5 border-b border-outline-variant/20">
+<div class="flex items-center gap-2 bg-surface-container-highest/60 px-2.5 py-1 rounded-full border border-outline-variant/30">
+<span class="material-symbols-outlined text-[16px] text-secondary">calendar_today</span>
+<span class="text-label-mono-sm font-label-mono-sm text-on-surface font-medium">Tomorrow • 10:00 AM</span>
+</div>
+<!-- iOS Style Interactive Toggle (ON) -->
+<button class="w-11 h-6 bg-tertiary rounded-full p-0.5 flex items-center justify-end transition-colors duration-200 cursor-pointer shadow-inner" type="button">
+<span class="w-5 h-5 bg-on-tertiary-container rounded-full shadow-md transform transition-transform"></span>
+</button>
+</div>
+<!-- Middle Content: High-Contrast Title & Description -->
+<div class="py-4 space-y-1.5">
+<div class="flex items-start justify-between gap-2">
+<h2 class="text-headline-md font-headline-md font-bold text-on-surface tracking-tight leading-snug">
+                Passport Renewal &amp; Visa Docs
+              </h2>
+</div>
+<p class="text-body-sm font-body-sm text-on-surface-variant leading-relaxed">
+              Submit bio-metric forms &amp; apostille docs at VFS Global center. Keep originals handy.
+            </p>
+</div>
+<!-- Bottom Row: Status Badge, Countdown & Quick Actions -->
+<div class="pt-3.5 flex items-center justify-between border-t border-outline-variant/20">
+<div class="flex items-center gap-2">
+<!-- Urgent Amber Badge -->
+<span class="px-2.5 py-0.5 rounded-full bg-secondary/15 border border-secondary/30 text-secondary text-label-mono-sm font-label-mono-sm font-bold uppercase tracking-wider">
+                URGENT
+              </span>
+<!-- Countdown Badge -->
+<span class="text-label-mono-sm font-label-mono-sm text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[13px]">schedule</span>
+                Due in 2 days
+              </span>
+</div>
+<!-- Quick Action Icons -->
+<div class="flex items-center gap-1">
+<button aria-label="Edit Task" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-on-surface-variant hover:text-on-surface transition-colors active:scale-90">
+<span class="material-symbols-outlined text-[15px]">edit</span>
+</button>
+<button aria-label="Delete Task" class="w-7 h-7 rounded-lg bg-surface-container hover:bg-surface-container-high flex items-center justify-center text-error hover:text-error-container transition-colors active:scale-90">
+<span class="material-symbols-outlined text-[15px]">delete</span>
+</button>
+</div>
+</div>
+</article>
+<!-- Cascading Overlapping Stack (Apple Wallet Style Peeks) -->
+<div class="relative -mt-3 space-y-0">
+<!-- Stack Card 2: Health Insurance Premium -->
+<div class="relative z-20 -mt-2 bg-[#141824] rounded-3xl p-4 wallet-card-shadow border border-white/10 hover:-translate-y-2 transition-all duration-200 cursor-pointer group">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-tertiary/10 border border-tertiary/30 text-tertiary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">shield</span>
+</div>
+<div>
+<h3 class="text-body-lg font-headline-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
+                    Health Insurance Premium
+                  </h3>
+<div class="flex items-center gap-2 text-label-mono-sm font-label-mono-sm text-on-surface-variant">
+<span>₹18,400 / Annual</span>
+<span>•</span>
+<span class="text-tertiary">Due in 5 days</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="text-label-mono-sm font-label-mono-sm bg-surface-container-highest px-2 py-0.5 rounded-full border border-outline-variant/30">Finance</span>
+<span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</div>
+</div>
+</div>
+<!-- Stack Card 3: Vehicle Emission Test -->
+<div class="relative z-10 -mt-2 bg-[#171922] rounded-3xl p-4 wallet-card-shadow border border-white/10 hover:-translate-y-2 transition-all duration-200 cursor-pointer group">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-secondary/10 border border-secondary/30 text-secondary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">directions_car</span>
+</div>
+<div>
+<h3 class="text-body-lg font-headline-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
+                    Vehicle Emission Test
+                  </h3>
+<div class="flex items-center gap-2 text-label-mono-sm font-label-mono-sm text-on-surface-variant">
+<span>PUC Center Bangalore</span>
+<span>•</span>
+<span class="text-secondary">Due in 12 days</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="text-label-mono-sm font-label-mono-sm bg-surface-container-highest px-2 py-0.5 rounded-full border border-outline-variant/30">Auto</span>
+<span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</div>
+</div>
+</div>
+<!-- Stack Card 4: Apartment Lease Agreement -->
+<div class="relative z-0 -mt-2 bg-[#191a21] rounded-3xl p-4 wallet-card-shadow border border-white/10 hover:-translate-y-2 transition-all duration-200 cursor-pointer group">
+<div class="flex items-center justify-between">
+<div class="flex items-center gap-3">
+<div class="w-9 h-9 rounded-xl bg-primary/10 border border-primary/30 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[20px]">home</span>
+</div>
+<div>
+<h3 class="text-body-lg font-headline-sm font-semibold text-on-surface group-hover:text-primary transition-colors">
+                    Apartment Lease Agreement
+                  </h3>
+<div class="flex items-center gap-2 text-label-mono-sm font-label-mono-sm text-on-surface-variant">
+<span>Landlord Renewal Notice</span>
+<span>•</span>
+<span class="text-on-surface-variant">Due next month</span>
+</div>
+</div>
+</div>
+<div class="flex items-center gap-1.5 text-on-surface-variant">
+<span class="text-label-mono-sm font-label-mono-sm bg-surface-container-highest px-2 py-0.5 rounded-full border border-outline-variant/30">Housing</span>
+<span class="material-symbols-outlined text-[18px]">keyboard_arrow_down</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Smart Chief of Staff Insight Pill -->
+<section class="pt-2">
+<div class="p-3.5 rounded-2xl bg-surface-container-low/60 border border-outline-variant/30 flex items-center gap-3">
+<div class="w-7 h-7 rounded-lg bg-primary-container/20 text-primary flex items-center justify-center flex-shrink-0">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+</div>
+<div class="flex-1 text-body-sm font-body-sm text-on-surface-variant leading-snug">
+<span class="text-on-surface font-semibold">LMK Intelligence:</span> 2 recurring bills usually arrive by the 18th. Ready to auto-schedule?
+          </div>
+</div>
+</section>
+</main>
+<!-- 5. Floating Action Button (FAB) with Expandable Hints -->
+<aside class="fixed bottom-20 right-4 z-40 flex flex-col items-end gap-2 pointer-events-auto">
+<!-- Contextual Action Pill -->
+<div class="bg-surface-container/90 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-full shadow-lg flex items-center gap-2 text-label-mono-sm font-label-mono-sm text-on-surface animate-fade-in">
+<span class="material-symbols-outlined text-[14px] text-primary">document_scanner</span>
+<span>Scan Doc / Bill</span>
+</div>
+<!-- Main Luminous Pill/Circle FAB -->
+<button aria-label="Create New Reminder" class="w-14 h-14 rounded-full bg-primary/20 backdrop-blur-xl border border-primary/50 text-on-surface flex items-center justify-center shadow-lg hover:bg-primary/30 active:scale-90 transition-all duration-150 group" style="box-shadow: 0 10px 25px -4px rgba(99, 102, 241, 0.45);" type="button">
+<span class="material-symbols-outlined text-[28px] text-primary group-hover:rotate-90 transition-transform duration-200">add</span>
+</button>
+</aside>
+<!-- 6. BottomNavBar (Shared Component Implementation) -->
+<!-- Destination Rule applied: Reminders is the active tab for dashboard cards -->
+<nav class="bg-surface-container/90 backdrop-blur-xl dark:bg-surface-container/90 docked full-width bottom-0 rounded-t-xl shadow-lg fixed bottom-0 left-0 right-0 w-full z-50 flex justify-around items-center px-gutter-mobile py-space-xs max-w-md mx-auto">
+<!-- Tab 1: Reminders (ACTIVE) -->
+<button class="flex flex-col items-center justify-center text-primary dark:text-primary font-semibold hover:text-primary dark:hover:text-primary transition-colors active:scale-90 duration-150 py-1 px-3" type="button">
+<span class="material-symbols-outlined text-[22px]" style="font-variation-settings: 'FILL' 1;">alarm</span>
+<span class="text-label-ui font-label-ui mt-0.5">Reminders</span>
+</button>
+<!-- Tab 2: Calendar -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors active:scale-90 duration-150 py-1 px-3" type="button">
+<span class="material-symbols-outlined text-[22px]">calendar_today</span>
+<span class="text-label-ui font-label-ui mt-0.5">Calendar</span>
+</button>
+<!-- Tab 3: Intelligence -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors active:scale-90 duration-150 py-1 px-3" type="button">
+<span class="material-symbols-outlined text-[22px]">auto_awesome</span>
+<span class="text-label-ui font-label-ui mt-0.5">Intelligence</span>
+</button>
+<!-- Tab 4: Settings -->
+<button class="flex flex-col items-center justify-center text-on-surface-variant dark:text-on-surface-variant hover:text-primary dark:hover:text-primary transition-colors active:scale-90 duration-150 py-1 px-3" type="button">
+<span class="material-symbols-outlined text-[22px]">tune</span>
+<span class="text-label-ui font-label-ui mt-0.5">Settings</span>
+</button>
+</nav>
+</div>
+</body></html>

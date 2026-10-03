@@ -22,6 +22,7 @@ class PostRepository {
       return docData;
     } catch (e) {
       debugPrint(e.toString());
+      return null;
     }
   }
 }

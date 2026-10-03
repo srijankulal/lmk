@@ -582,19 +582,28 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen>
               ScaleTransition(
                 scale: _pulseAnimation,
                 child: Container(
-                  padding: const EdgeInsets.all(14),
+                  width: 52,
+                  height: 52,
+                  padding: const EdgeInsets.all(10),
                   decoration: BoxDecoration(
-                    shape: BoxShape.circle,
-                    color: AppColors.primary.withAlpha(25),
+                    borderRadius: BorderRadius.circular(16),
+                    color: AppColors.primary.withAlpha(20),
                     border: Border.all(
-                      color: AppColors.primary.withAlpha(80),
+                      color: AppColors.primary.withAlpha(70),
                       width: 1.5,
                     ),
                   ),
-                  child: const Icon(
-                    Icons.notifications_active_rounded,
-                    color: AppColors.primary,
-                    size: 28,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(10),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      fit: BoxFit.contain,
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.notifications_active_rounded,
+                        color: AppColors.primary,
+                        size: 26,
+                      ),
+                    ),
                   ),
                 ),
               ),
@@ -604,12 +613,12 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen>
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'DOCUMENT REMINDER',
+                      'LMK • DOCUMENT REMINDER',
                       style: TextStyle(
                         fontSize: 10,
                         letterSpacing: 1.5,
                         fontWeight: FontWeight.w700,
-                        color: AppColors.textSecondary,
+                        color: AppColors.primary,
                       ),
                     ),
                     const SizedBox(height: 4),

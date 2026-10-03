@@ -213,4 +213,11 @@ class SyncService {
       _isSyncing = false;
     }
   }
+
+  bool get isSyncing => _isSyncing;
+
+  Future<void> syncFull() async {
+    await syncAll();
+    await syncDown();
+  }
 }

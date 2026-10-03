@@ -5,7 +5,11 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Lmk</string>
+	<string>LMK</string>
+	<key>NSCameraUsageDescription</key>
+	<string>LMK requires camera access to scan and photograph documents for automated reminder extraction.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>LMK requires photo library access to upload document images for automated reminder extraction.</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>

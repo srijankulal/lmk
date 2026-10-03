@@ -10,6 +10,7 @@ import 'package:lmk/presentation/dataFrom.dart';
 import 'package:lmk/presentation/setReminder.dart';
 import 'package:lmk/presentation/start_screen.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/services/settings_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'launch/launch.dart';
@@ -34,22 +35,12 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   tz.initializeTimeZones();
+  await AppSettings.instance.init();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
 
   const AndroidInitializationSettings initAndroid =
       AndroidInitializationSettings('@mipmap/ic_launcher');
-
-  const AndroidNotificationChannel reminderChannel = AndroidNotificationChannel(
-    'reminder_channel_v2',
-    'Reminders',
-    description: 'Channel for reminder notifications',
-    importance: Importance.max,
-    playSound: true,
-    enableVibration: true,
-    showBadge: true,
-    audioAttributesUsage: AudioAttributesUsage.alarm,
-  );
 
   final androidPlugin = flutterLocalNotificationsPlugin
       .resolvePlatformSpecificImplementation<
@@ -57,7 +48,35 @@ void main() async {
       >();
 
   await androidPlugin?.requestNotificationsPermission();
+
+  // Create primary fallback channel
+  const AndroidNotificationChannel reminderChannel = AndroidNotificationChannel(
+    'reminder_channel_v2',
+    'Reminders (Default)',
+    description: 'Channel for reminder notifications',
+    importance: Importance.max,
+    playSound: true,
+    enableVibration: true,
+    showBadge: true,
+    audioAttributesUsage: AudioAttributesUsage.alarm,
+  );
   await androidPlugin?.createNotificationChannel(reminderChannel);
+
+  // Register dedicated notification channels for each custom sound option
+  for (final sound in AppSettings.availableSounds) {
+    final soundChannel = AndroidNotificationChannel(
+      AppSettings.instance.getChannelIdForSound(sound.id),
+      'Reminders - ${sound.name}',
+      description: 'Channel with ${sound.name} alert sound',
+      importance: Importance.max,
+      playSound: true,
+      sound: RawResourceAndroidNotificationSound(sound.id),
+      enableVibration: true,
+      showBadge: true,
+      audioAttributesUsage: AudioAttributesUsage.alarm,
+    );
+    await androidPlugin?.createNotificationChannel(soundChannel);
+  }
 
   const InitializationSettings initSettings = InitializationSettings(
     android: initAndroid,
@@ -118,14 +137,14 @@ class _MyAppState extends State<MyApp> {
             brightness: Brightness.light,
             colorScheme: const ShadSlateColorScheme.light(
               primary: AppColors.primary,
-              background: Color(0xFFF4EFF8),
+              background: Color(0xFFF1F2E8),
             ),
           ),
           darkTheme: ShadThemeData(
             brightness: Brightness.dark,
             colorScheme: const ShadSlateColorScheme.dark(
               primary: AppColors.primary,
-              background: Color(0xFF121019),
+              background: Color(0xFF101516),
             ),
           ),
           themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
