@@ -14,6 +14,8 @@ class DocForm extends StatefulWidget {
 class _DocFormState extends State<DocForm> {
   final _titleController = TextEditingController();
   final _formKey = GlobalKey<ShadFormState>();
+  final _issueDatePopoverController = ShadPopoverController();
+  final _expiryDatePopoverController = ShadPopoverController();
 
   DocData? _args;
 
@@ -32,6 +34,8 @@ class _DocFormState extends State<DocForm> {
   @override
   void dispose() {
     _titleController.dispose();
+    _issueDatePopoverController.dispose();
+    _expiryDatePopoverController.dispose();
     super.dispose();
   }
 
@@ -142,7 +146,11 @@ class _DocFormState extends State<DocForm> {
                           ShadDatePickerFormField(
                             id: 'Issue Date',
                             label: const Text('Issue date'),
-                            // enabled: false,
+                            popoverController: _issueDatePopoverController,
+                            closeOnSelection: true,
+                            onChanged: (_) {
+                              _issueDatePopoverController.hide();
+                            },
                             placeholder: const Text('Issue date not found'),
                             initialValue: _args?.issueDate != null
                                 ? DateTime.parse('${_args!.issueDate}Z')
@@ -150,9 +158,13 @@ class _DocFormState extends State<DocForm> {
                           ),
                           const SizedBox(height: 16),
                           ShadDatePickerFormField(
-                            closeOnSelection: true,
                             id: 'Expiry Date',
                             label: const Text('Expiry date'),
+                            popoverController: _expiryDatePopoverController,
+                            closeOnSelection: true,
+                            onChanged: (_) {
+                              _expiryDatePopoverController.hide();
+                            },
                             placeholder: const Text('Select expiry date'),
                             initialValue: _args?.expiryDate != null
                                 ? DateTime.parse('${_args!.expiryDate}Z')

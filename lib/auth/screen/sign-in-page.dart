@@ -70,6 +70,7 @@ class _SignInPageState extends State<SignInPage>
         final isDark = ThemeController.instance.isDarkMode;
         return Scaffold(
           backgroundColor: AppColors.background,
+          resizeToAvoidBottomInset: false,
           body: Stack(
         children: [
           // Ambient Background Glows
@@ -110,12 +111,21 @@ class _SignInPageState extends State<SignInPage>
 
           // Content
           SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 28.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Spacer(),
+            child: LayoutBuilder(
+              builder: (context, constraints) {
+                return SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                    ),
+                    child: IntrinsicHeight(
+                      child: Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 28.0),
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Spacer(),
 
                   // Logo / Icon
                   ScaleTransition(
@@ -314,6 +324,11 @@ class _SignInPageState extends State<SignInPage>
               ),
             ),
           ),
+        ),
+      );
+    },
+  ),
+),
         ],
       ),
     );
@@ -323,44 +338,42 @@ class _SignInPageState extends State<SignInPage>
 
   Future<void> _guestSignIn() async {
     final pageContext = context;
-    setState(() => _isLoading = true);
-    showGeneralDialog(
+    final nameController = TextEditingController();
+
+    final result = await showDialog<String>(
       context: pageContext,
       barrierDismissible: true,
-      barrierLabel: 'Dismiss',
-      barrierColor: Colors.black26,
-      transitionDuration: const Duration(milliseconds: 260),
-      pageBuilder: (_, __, ___) => const SizedBox(),
-      transitionBuilder: (dlgCtx, anim1, anim2, child) {
-        return Transform.scale(
-          scale: Curves.easeOutBack.transform(anim1.value),
-          child: Opacity(
-            opacity: anim1.value,
-            child: Center(
-              child: Container(
-                constraints: const BoxConstraints(maxWidth: 340),
-                margin: const EdgeInsets.symmetric(horizontal: 24),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(24),
-                  child: BackdropFilter(
-                    filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-                    child: Container(
-                      decoration: BoxDecoration(
-                        color: AppColors.surface,
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(
-                          color: AppColors.border,
-                          width: 1.0,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withAlpha(20),
-                            blurRadius: 30,
-                            offset: const Offset(0, 10),
-                          ),
-                        ],
+      builder: (dlgCtx) {
+        return Dialog(
+          backgroundColor: Colors.transparent,
+          elevation: 0,
+          insetPadding: const EdgeInsets.symmetric(horizontal: 24),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 340),
+            child: Material(
+              color: Colors.transparent,
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(24),
+                child: BackdropFilter(
+                  filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                  child: Container(
+                    decoration: BoxDecoration(
+                      color: AppColors.surface,
+                      borderRadius: BorderRadius.circular(24),
+                      border: Border.all(
+                        color: AppColors.border,
+                        width: 1.0,
                       ),
-                      padding: const EdgeInsets.all(22),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withAlpha(20),
+                          blurRadius: 30,
+                          offset: const Offset(0, 10),
+                        ),
+                      ],
+                    ),
+                    padding: const EdgeInsets.all(22),
+                    child: SingleChildScrollView(
                       child: Column(
                         mainAxisSize: MainAxisSize.min,
                         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -392,162 +405,92 @@ class _SignInPageState extends State<SignInPage>
                           ),
                           const SizedBox(height: 14),
                           Text(
-                            "Your reminders will be stored locally on this device. You can sign in anytime later to sync your data to the cloud.",
+                            "Reminders are saved locally on this device. You can sign in with Google anytime later.",
                             style: TextStyle(
                               color: AppColors.textSecondary,
-                              fontSize: 13.5,
+                              fontSize: 13,
                               height: 1.4,
                             ),
                           ),
-                          const SizedBox(height: 22),
-                          Row(
-                            children: [
-                              TextButton(
-                                onPressed: () {
-                                  Navigator.of(dlgCtx).pop();
-                                  setState(() => _isLoading = false);
-                                },
-                                child: Text(
-                                  "Cancel",
-                                  style: TextStyle(color: AppColors.textSecondary),
+                          const SizedBox(height: 16),
+                          Text(
+                            "What should we call you? (optional)",
+                            style: TextStyle(
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                          const SizedBox(height: 8),
+                          TextField(
+                            controller: nameController,
+                            autofocus: false,
+                            style: TextStyle(
+                              color: AppColors.textPrimary,
+                              fontSize: 14,
+                            ),
+                            decoration: InputDecoration(
+                              hintText: "Guest",
+                              hintStyle: TextStyle(
+                                color: AppColors.textSecondary.withAlpha(120),
+                              ),
+                              filled: true,
+                              fillColor: AppColors.surfaceLight,
+                              contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                                vertical: 12,
+                              ),
+                              border: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.border,
                                 ),
                               ),
-                              const Spacer(),
+                              enabledBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: BorderSide(
+                                  color: AppColors.border,
+                                ),
+                              ),
+                              focusedBorder: OutlineInputBorder(
+                                borderRadius: BorderRadius.circular(12),
+                                borderSide: const BorderSide(
+                                  color: AppColors.primary,
+                                  width: 1.5,
+                                ),
+                              ),
+                            ),
+                            onSubmitted: (val) {
+                              Navigator.pop(
+                                dlgCtx,
+                                val.trim().isNotEmpty ? val.trim() : "Guest",
+                              );
+                            },
+                          ),
+                          const SizedBox(height: 20),
+                          Row(
+                            mainAxisAlignment: MainAxisAlignment.end,
+                            children: [
+                              TextButton(
+                                onPressed: () => Navigator.pop(dlgCtx),
+                                child: Text(
+                                  "Cancel",
+                                  style: TextStyle(
+                                    color: AppColors.textSecondary,
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 8),
                               ShadButton(
                                 backgroundColor: AppColors.primary,
-                                child: const Text("Continue"),
-                                onPressed: () async {
-                                  Navigator.of(dlgCtx).pop();
-
-                                  final nameController = TextEditingController();
-                                  final name = await showDialog<String>(
-                                    context: pageContext,
-                                    builder: (nameCtx) => Center(
-                                      child: Container(
-                                        constraints:
-                                            const BoxConstraints(maxWidth: 340),
-                                        margin: const EdgeInsets.symmetric(
-                                            horizontal: 24),
-                                        child: ClipRRect(
-                                          borderRadius:
-                                              BorderRadius.circular(24),
-                                          child: Container(
-                                            decoration: BoxDecoration(
-                                              color: AppColors.surface,
-                                              borderRadius:
-                                                  BorderRadius.circular(24),
-                                              border: Border.all(
-                                                color: AppColors.border,
-                                                width: 1.0,
-                                              ),
-                                              boxShadow: [
-                                                BoxShadow(
-                                                  color: Colors.black.withAlpha(20),
-                                                  blurRadius: 30,
-                                                  offset: const Offset(0, 10),
-                                                ),
-                                              ],
-                                            ),
-                                            padding: const EdgeInsets.all(22),
-                                            child: Column(
-                                              mainAxisSize: MainAxisSize.min,
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: [
-                                                Text(
-                                                  "What should we call you?",
-                                                  style: TextStyle(
-                                                    fontSize: 17,
-                                                    fontWeight: FontWeight.bold,
-                                                    color: AppColors.textPrimary,
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 14),
-                                                TextField(
-                                                  controller: nameController,
-                                                  autofocus: true,
-                                                  style: TextStyle(
-                                                    color: AppColors.textPrimary,
-                                                  ),
-                                                  decoration: InputDecoration(
-                                                    hintText: "Enter your name",
-                                                    hintStyle: TextStyle(
-                                                      color: AppColors
-                                                          .textSecondary
-                                                          .withAlpha(120),
-                                                    ),
-                                                    filled: true,
-                                                    fillColor: AppColors
-                                                        .surfaceLight,
-                                                    border: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                      borderSide: BorderSide(
-                                                        color: AppColors.border,
-                                                      ),
-                                                    ),
-                                                    enabledBorder: OutlineInputBorder(
-                                                      borderRadius:
-                                                          BorderRadius.circular(
-                                                              12),
-                                                      borderSide: BorderSide(
-                                                        color: AppColors.border,
-                                                      ),
-                                                    ),
-                                                  ),
-                                                ),
-                                                const SizedBox(height: 20),
-                                                Row(
-                                                  mainAxisAlignment:
-                                                      MainAxisAlignment.end,
-                                                  children: [
-                                                    TextButton(
-                                                      onPressed: () =>
-                                                          Navigator.pop(
-                                                              nameCtx),
-                                                      child: Text(
-                                                        "Cancel",
-                                                        style: TextStyle(
-                                                          color: AppColors
-                                                              .textSecondary,
-                                                        ),
-                                                      ),
-                                                    ),
-                                                    const SizedBox(width: 8),
-                                                    ShadButton(
-                                                      backgroundColor:
-                                                          AppColors.primary,
-                                                      onPressed: () {
-                                                        if (nameController.text
-                                                            .trim()
-                                                            .isEmpty) return;
-                                                        Navigator.pop(
-                                                          nameCtx,
-                                                          nameController.text
-                                                              .trim(),
-                                                        );
-                                                      },
-                                                      child: const Text(
-                                                          "Get Started"),
-                                                    ),
-                                                  ],
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ),
-                                    ),
+                                onPressed: () {
+                                  final entered = nameController.text.trim();
+                                  Navigator.pop(
+                                    dlgCtx,
+                                    entered.isNotEmpty ? entered : "Guest",
                                   );
-
-                                  if (name != null && name.isNotEmpty) {
-                                    await AuthMethods()
-                                        .signInAsGuest(pageContext, name: name);
-                                  } else {
-                                    setState(() => _isLoading = false);
-                                  }
                                 },
+                                child: const Text("Get Started"),
                               ),
                             ],
                           ),
@@ -562,5 +505,19 @@ class _SignInPageState extends State<SignInPage>
         );
       },
     );
+
+    if (result != null && mounted) {
+      setState(() => _isLoading = true);
+      try {
+        await AuthMethods().signInAsGuest(context, name: result);
+      } catch (e) {
+        if (mounted) {
+          setState(() => _isLoading = false);
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Could not start guest session: $e')),
+          );
+        }
+      }
+    }
   }
 }

@@ -17,6 +17,7 @@ import 'package:lmk/services/sync_service.dart';
 import 'package:lmk/services/settings_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/presentation/start_screen.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class Home extends StatefulWidget {
@@ -112,30 +113,28 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   Future<void> _initToken() async {
     final user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      final t = await user.getIdToken();
-      if (!mounted) return;
-      setState(() => token = t);
-      await _loadReminders();
+      try {
+        final t = await user.getIdToken();
+        if (mounted) setState(() => token = t);
+      } catch (_) {}
     }
+    await _loadReminders();
   }
 
   Future<void> _load() async {
-    final uid = FirebaseAuth.instance.currentUser?.uid;
-    if (uid != null) {
-      try {
-        final userLocal = await UserLocalDataSource().getUser();
-        if (!mounted) return;
+    try {
+      final userLocal = await UserLocalDataSource().getUser();
+      if (!mounted) return;
+      if (userLocal != null) {
         setState(() {
-          name = userLocal?.name ?? name;
-          photoUrl = userLocal?.photoUrl ?? photoUrl;
+          if (userLocal.name.isNotEmpty) name = userLocal.name;
+          if (userLocal.photoUrl.isNotEmpty) photoUrl = userLocal.photoUrl;
         });
-      } catch (e) {
-        // Silently ignore user load errors
       }
+    } catch (e) {
+      // Silently ignore user load errors
     }
-    if (token != null) {
-      await _loadReminders();
-    }
+    await _loadReminders();
   }
 
   void _subscribeToConnection() {
@@ -167,9 +166,15 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
 
   Future<void> _loadReminders() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user == null) return;
+    String? uid = user?.uid;
+    if (uid == null || uid.isEmpty) {
+      final userLocal = await UserLocalDataSource().getUser();
+      uid = userLocal?.uid;
+    }
+    if (uid == null || uid.isEmpty) return;
+
     ReminderLocalDataSource localDataSource = ReminderLocalDataSource();
-    final localReminders = await localDataSource.getReminders(user.uid);
+    final localReminders = await localDataSource.getReminders(uid);
     if (!mounted) return;
     setState(() {
       reminders = localReminders
@@ -339,6 +344,16 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     }
     if (_selectedFilter == 'Active') {
       return list.where((r) => r.isEnabled).toList();
+    } else if (_selectedFilter == 'Urgent') {
+      final now = DateTime.now();
+      final today = DateTime(now.year, now.month, now.day);
+      return list.where((r) {
+        if (!r.isEnabled) return false;
+        final target = r.reminderDate ?? r.expiry_date;
+        final diff =
+            DateTime(target.year, target.month, target.day).difference(today).inDays;
+        return diff <= 3;
+      }).toList();
     } else if (_selectedFilter == 'Disabled') {
       return list.where((r) => !r.isEnabled).toList();
     }
@@ -355,6 +370,15 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         final filtered = _filteredReminders;
         final activeCount = reminders.where((r) => r.isEnabled).length;
         final totalCount = reminders.length;
+        final todayNow = DateTime.now();
+        final startOfToday = DateTime(todayNow.year, todayNow.month, todayNow.day);
+        final urgentCount = reminders.where((r) {
+          if (!r.isEnabled) return false;
+          final target = r.reminderDate ?? r.expiry_date;
+          final diff =
+              DateTime(target.year, target.month, target.day).difference(startOfToday).inDays;
+          return diff <= 3;
+        }).length;
 
         return Scaffold(
           backgroundColor: AppColors.background,
@@ -415,134 +439,140 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
                             // Left: LMK 3D Brand Logo with Live Online Dot & Title
-                            Row(
-                              mainAxisSize: MainAxisSize.min,
-                              children: [
-                                GestureDetector(
-                                  onTap: () {
-                                    HapticFeedback.lightImpact();
-                                    if (!_isOnline) {
-                                      showOfflineToast();
-                                    } else {
-                                      ShadToaster.of(context).show(
-                                        const ShadToast(
-                                          duration: Duration(seconds: 2),
-                                          title: Text('LMK Online'),
-                                          description: Text(
-                                            'All reminders are synced with cloud.',
-                                          ),
-                                        ),
-                                      );
-                                    }
-                                  },
-                                  child: Stack(
-                                    clipBehavior: Clip.none,
-                                    children: [
-                                      Container(
-                                        width: 38,
-                                        height: 38,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(10),
-                                          boxShadow: [
-                                            BoxShadow(
-                                              color: (isDark ? Colors.black : const Color(0xFF2E3A3B))
-                                                  .withAlpha(isDark ? 80 : 30),
-                                              blurRadius: 8,
-                                              offset: const Offset(0, 2),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  GestureDetector(
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      if (!_isOnline) {
+                                        showOfflineToast();
+                                      } else {
+                                        ShadToaster.of(context).show(
+                                          const ShadToast(
+                                            duration: Duration(seconds: 2),
+                                            title: Text('LMK Online'),
+                                            description: Text(
+                                              'All reminders are synced with cloud.',
                                             ),
-                                          ],
-                                        ),
-                                        child: ClipRRect(
-                                          borderRadius: BorderRadius.circular(10),
-                                          child: Image.asset(
-                                            'assets/images/logo.png',
-                                            fit: BoxFit.contain,
-                                            errorBuilder: (context, error, stackTrace) => Container(
-                                              color: AppColors.primary,
-                                              child: const Center(
-                                                child: Text(
-                                                  'LMK',
-                                                  style: TextStyle(
-                                                    color: Colors.white,
-                                                    fontWeight: FontWeight.w900,
-                                                    fontSize: 10,
+                                          ),
+                                        );
+                                      }
+                                    },
+                                    child: Stack(
+                                      clipBehavior: Clip.none,
+                                      children: [
+                                        Container(
+                                          width: 38,
+                                          height: 38,
+                                          decoration: BoxDecoration(
+                                            borderRadius: BorderRadius.circular(10),
+                                            boxShadow: [
+                                              BoxShadow(
+                                                color: (isDark ? Colors.black : const Color(0xFF2E3A3B))
+                                                    .withAlpha(isDark ? 80 : 30),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ],
+                                          ),
+                                          child: ClipRRect(
+                                            borderRadius: BorderRadius.circular(10),
+                                            child: Image.asset(
+                                              'assets/images/logo.png',
+                                              fit: BoxFit.contain,
+                                              errorBuilder: (context, error, stackTrace) => Container(
+                                                color: AppColors.primary,
+                                                child: const Center(
+                                                  child: Text(
+                                                    'LMK',
+                                                    style: TextStyle(
+                                                      color: Colors.white,
+                                                      fontWeight: FontWeight.w900,
+                                                      fontSize: 10,
+                                                    ),
                                                   ),
                                                 ),
                                               ),
                                             ),
                                           ),
                                         ),
-                                      ),
-                                      // Glowing Online/Offline Status Dot
-                                      Positioned(
-                                        right: -2,
-                                        bottom: -2,
-                                        child: AnimatedContainer(
-                                          duration: const Duration(milliseconds: 250),
-                                          width: 10,
-                                          height: 10,
-                                          decoration: BoxDecoration(
-                                            shape: BoxShape.circle,
-                                            color: _isOnline ? AppColors.success : AppColors.error,
-                                            border: Border.all(
-                                              color: AppColors.background,
-                                              width: 2,
-                                            ),
-                                            boxShadow: [
-                                              BoxShadow(
-                                                color: (_isOnline ? AppColors.success : AppColors.error)
-                                                    .withAlpha(160),
-                                                blurRadius: 5,
+                                        // Glowing Online/Offline Status Dot
+                                        Positioned(
+                                          right: -2,
+                                          bottom: -2,
+                                          child: AnimatedContainer(
+                                            duration: const Duration(milliseconds: 250),
+                                            width: 10,
+                                            height: 10,
+                                            decoration: BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: _isOnline ? AppColors.success : AppColors.error,
+                                              border: Border.all(
+                                                color: AppColors.background,
+                                                width: 2,
                                               ),
-                                            ],
-                                          ),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                const SizedBox(width: 10),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Row(
-                                      mainAxisSize: MainAxisSize.min,
-                                      children: [
-                                        Text(
-                                          'LMK',
-                                          style: TextStyle(
-                                            fontSize: 17,
-                                            fontWeight: FontWeight.w900,
-                                            color: AppColors.textPrimary,
-                                            letterSpacing: -0.4,
-                                          ),
-                                        ),
-                                        const SizedBox(width: 5),
-                                        Text(
-                                          '• let me know',
-                                          style: TextStyle(
-                                            fontSize: 10.5,
-                                            fontWeight: FontWeight.w600,
-                                            color: AppColors.textTertiary,
-                                            letterSpacing: 0.2,
+                                              boxShadow: [
+                                                BoxShadow(
+                                                  color: (_isOnline ? AppColors.success : AppColors.error)
+                                                      .withAlpha(160),
+                                                  blurRadius: 5,
+                                                ),
+                                              ],
+                                            ),
                                           ),
                                         ),
                                       ],
                                     ),
-                                    Text(
-                                      'Hi, $name',
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        fontWeight: FontWeight.w500,
-                                        color: AppColors.textSecondary,
-                                      ),
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Row(
+                                          children: [
+                                            Text(
+                                              'LMK',
+                                              style: TextStyle(
+                                                fontSize: 17,
+                                                fontWeight: FontWeight.w900,
+                                                color: AppColors.textPrimary,
+                                                letterSpacing: -0.4,
+                                              ),
+                                            ),
+                                            const SizedBox(width: 5),
+                                            Flexible(
+                                              child: Text(
+                                                '• let me know',
+                                                style: TextStyle(
+                                                  fontSize: 10.5,
+                                                  fontWeight: FontWeight.w600,
+                                                  color: AppColors.textTertiary,
+                                                  letterSpacing: 0.2,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                        Text(
+                                          'Hi, $name',
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            fontWeight: FontWeight.w500,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
                                     ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                ],
+                              ),
                             ),
                             const SizedBox(width: 6),
                             Row(
@@ -859,6 +889,13 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ),
                           const SizedBox(width: 8),
                           _buildFilterChip(
+                            label: 'Urgent',
+                            count: urgentCount,
+                            isSelected: _selectedFilter == 'Urgent',
+                            onTap: () => setState(() => _selectedFilter = 'Urgent'),
+                          ),
+                          const SizedBox(width: 8),
+                          _buildFilterChip(
                             label: 'Disabled',
                             count: totalCount - activeCount,
                             isSelected: _selectedFilter == 'Disabled',
@@ -1123,11 +1160,14 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
           builder: (context, _) {
             final isDark = ThemeController.instance.isDarkMode;
             final user = FirebaseAuth.instance.currentUser;
-            final email = user?.email ?? 'Logged In';
+            final email = user?.email ?? 'Guest Account (Local Only)';
             final activeCount = reminders.where((r) => r.isEnabled).length;
 
             return Container(
-              padding: const EdgeInsets.fromLTRB(24, 16, 24, 34),
+              constraints: BoxConstraints(
+                maxHeight: MediaQuery.sizeOf(context).height * 0.88,
+              ),
+              padding: const EdgeInsets.fromLTRB(24, 16, 24, 20),
               decoration: BoxDecoration(
                 color: isDark ? const Color(0xFF181524) : Colors.white,
                 borderRadius: const BorderRadius.vertical(top: Radius.circular(32)),
@@ -1156,9 +1196,14 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         borderRadius: BorderRadius.circular(2),
                       ),
                     ),
-                    const SizedBox(height: 20),
-
-                    // User Avatar with halo
+                    const SizedBox(height: 16),
+                    Flexible(
+                      child: SingleChildScrollView(
+                        physics: const BouncingScrollPhysics(),
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            // User Avatar with halo
                     Container(
                       padding: const EdgeInsets.all(4),
                       decoration: BoxDecoration(
@@ -1293,48 +1338,56 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ),
                         ),
                         child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Row(
-                              children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isDark
-                                        ? const Color(0xFF2E2940)
-                                        : Colors.white,
-                                  ),
-                                  child: const Icon(
-                                    LucideIcons.bellRing,
-                                    size: 18,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Column(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    Text(
-                                      "Notification Sound",
-                                      style: TextStyle(
-                                        fontSize: 14.5,
-                                        fontWeight: FontWeight.w700,
-                                        color: AppColors.textPrimary,
-                                      ),
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark
+                                          ? const Color(0xFF2E2940)
+                                          : Colors.white,
                                     ),
-                                    Text(
-                                      "${AppSettings.instance.currentSoundOption.name} • Tap to change",
-                                      style: TextStyle(
-                                        fontSize: 11.5,
-                                        color: AppColors.textSecondary,
-                                      ),
+                                    child: const Icon(
+                                      LucideIcons.bellRing,
+                                      size: 18,
+                                      color: AppColors.primary,
                                     ),
-                                  ],
-                                ),
-                              ],
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Notification Sound",
+                                          style: TextStyle(
+                                            fontSize: 14.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          "${AppSettings.instance.currentSoundOption.name} • Tap to change",
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
+                            const SizedBox(width: 8),
                             Icon(
                               LucideIcons.chevronRight,
                               size: 18,
@@ -1357,50 +1410,58 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         ),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isDark
-                                      ? const Color(0xFF2E2940)
-                                      : Colors.white,
-                                ),
-                                child: const Icon(
-                                  LucideIcons.smartphone,
-                                  size: 18,
-                                  color: Color(0xFF10B981),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Full-Screen Alert",
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isDark
+                                        ? const Color(0xFF2E2940)
+                                        : Colors.white,
                                   ),
-                                  Text(
-                                    AppSettings.instance.fullScreenIntent
-                                        ? "Full-screen takeover enabled"
-                                        : "Standard notification banner",
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                  child: const Icon(
+                                    LucideIcons.smartphone,
+                                    size: 18,
+                                    color: Color(0xFF10B981),
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Full-Screen Alert",
+                                        style: TextStyle(
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        AppSettings.instance.fullScreenIntent
+                                            ? "Full-screen takeover enabled"
+                                            : "Standard notification banner",
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Switch.adaptive(
                             value: AppSettings.instance.fullScreenIntent,
                             activeTrackColor: AppColors.primary,
@@ -1425,48 +1486,56 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         ),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isDark
-                                      ? const Color(0xFF2E2940)
-                                      : Colors.white,
-                                ),
-                                child: Icon(
-                                  LucideIcons.cloud,
-                                  size: 18,
-                                  color: _isOnline ? const Color(0xFF38BDF8) : AppColors.error,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Cloud Sync",
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isDark
+                                        ? const Color(0xFF2E2940)
+                                        : Colors.white,
                                   ),
-                                  Text(
-                                    _isOnline ? "Online & connected" : "Offline mode",
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                  child: Icon(
+                                    LucideIcons.cloud,
+                                    size: 18,
+                                    color: _isOnline ? const Color(0xFF38BDF8) : AppColors.error,
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Cloud Sync",
+                                        style: TextStyle(
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        _isOnline ? "Online & connected" : "Offline mode",
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           GestureDetector(
                             onTap: _isSyncing
                                 ? null
@@ -1530,50 +1599,58 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         ),
                       ),
                       child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                width: 36,
-                                height: 36,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: isDark
-                                      ? const Color(0xFF2E2940)
-                                      : Colors.white,
-                                ),
-                                child: Icon(
-                                  isDark ? LucideIcons.moon : LucideIcons.sun,
-                                  size: 18,
-                                  color: isDark
-                                      ? const Color(0xFFFBBF24)
-                                      : const Color(0xFFF59E0B),
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    "Dark Mode",
-                                    style: TextStyle(
-                                      fontSize: 14.5,
-                                      fontWeight: FontWeight.w700,
-                                      color: AppColors.textPrimary,
-                                    ),
+                          Expanded(
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 36,
+                                  height: 36,
+                                  decoration: BoxDecoration(
+                                    shape: BoxShape.circle,
+                                    color: isDark
+                                        ? const Color(0xFF2E2940)
+                                        : Colors.white,
                                   ),
-                                  Text(
-                                    isDark ? "Obsidian Velvet theme" : "Warm Linen Paper theme",
-                                    style: TextStyle(
-                                      fontSize: 11.5,
-                                      color: AppColors.textSecondary,
-                                    ),
+                                  child: Icon(
+                                    isDark ? LucideIcons.moon : LucideIcons.sun,
+                                    size: 18,
+                                    color: isDark
+                                        ? const Color(0xFFFBBF24)
+                                        : const Color(0xFFF59E0B),
                                   ),
-                                ],
-                              ),
-                            ],
+                                ),
+                                const SizedBox(width: 12),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        "Dark Mode",
+                                        style: TextStyle(
+                                          fontSize: 14.5,
+                                          fontWeight: FontWeight.w700,
+                                          color: AppColors.textPrimary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                      Text(
+                                        isDark ? "Obsidian Velvet theme" : "Warm Linen Paper theme",
+                                        style: TextStyle(
+                                          fontSize: 11.5,
+                                          color: AppColors.textSecondary,
+                                        ),
+                                        maxLines: 1,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
                           ),
+                          const SizedBox(width: 8),
                           Switch.adaptive(
                             value: isDark,
                             activeTrackColor: AppColors.primary,
@@ -1585,7 +1662,135 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         ],
                       ),
                     ),
+                    const SizedBox(height: 10),
+
+                    // 5. App Guide & Button Tour
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const StartScreen(isTour: true),
+                          ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF221E30) : const Color(0xFFF5F0FB),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark ? const Color(0x20FFFFFF) : const Color(0x10000000),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark
+                                          ? const Color(0xFF2E2940)
+                                          : Colors.white,
+                                    ),
+                                    child: const Icon(
+                                      LucideIcons.compass,
+                                      size: 18,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "App Guide & Button Tour",
+                                          style: TextStyle(
+                                            fontSize: 14.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          "How OCR, creation buttons & filters work",
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              LucideIcons.chevronRight,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
                     const SizedBox(height: 16),
+
+                    if (user == null) ...[
+                      GestureDetector(
+                        onTap: () async {
+                          final nav = Navigator.of(context);
+                          nav.pop();
+                          await AuthMethods().signInWithGoogle(context);
+                        },
+                        child: Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.symmetric(vertical: 14),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(18),
+                            boxShadow: [
+                              BoxShadow(
+                                color: AppColors.primary.withAlpha(80),
+                                blurRadius: 12,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                LucideIcons.logIn,
+                                size: 18,
+                                color: Colors.white,
+                              ),
+                              SizedBox(width: 8),
+                              Text(
+                                "Link Google Account",
+                                style: TextStyle(
+                                  fontSize: 14.5,
+                                  fontWeight: FontWeight.w700,
+                                  color: Colors.white,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 10),
+                    ],
 
                     // Sign Out Button
                     GestureDetector(
@@ -1642,7 +1847,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'LMK — Let Me Know • v1.0.0',
+                          'LMK — Let Me Know • v0.1.0 (Alpha)',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,
@@ -1651,6 +1856,10 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ),
                         ),
                       ],
+                    ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -1753,112 +1962,267 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         color: AppColors.textSecondary,
                       ),
                     ),
-                    const SizedBox(height: 16),
-                    ...AppSettings.availableSounds.map((sound) {
-                      final isCurrent = sound.id == selected;
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 8.0),
-                        child: GestureDetector(
-                          onTap: () async {
-                            HapticFeedback.selectionClick();
-                            await AppSettings.instance
-                                .setNotificationSound(sound.id);
-                            await AppSettings.instance.previewSound(sound.id);
-                          },
-                          child: AnimatedContainer(
-                            duration: const Duration(milliseconds: 180),
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 14,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: isCurrent
-                                  ? (isDark
-                                      ? AppColors.primary.withAlpha(40)
-                                      : AppColors.primary.withAlpha(20))
-                                  : (isDark
-                                      ? const Color(0xFF221E30)
-                                      : const Color(0xFFF7F3FB)),
-                              borderRadius: BorderRadius.circular(16),
-                              border: Border.all(
-                                color: isCurrent
-                                    ? AppColors.primary
-                                        .withAlpha(isDark ? 120 : 90)
-                                    : (isDark
-                                        ? const Color(0x18FFFFFF)
-                                        : const Color(0x10000000)),
-                                width: isCurrent ? 1.4 : 1.0,
+                    const SizedBox(height: 14),
+                    // Upload Custom Audio Button
+                    GestureDetector(
+                      onTap: () async {
+                        HapticFeedback.mediumImpact();
+                        final picked = await AppSettings.instance.pickAndUploadUserAudio();
+                        if (picked != null && context.mounted) {
+                          ShadToaster.of(context).show(
+                            ShadToast(
+                              duration: const Duration(seconds: 2),
+                              backgroundColor: AppColors.primary,
+                              title: const Text(
+                                'Audio Added & Set!',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              description: Text(
+                                'Playing "${picked.name}" for preview.',
+                                style: const TextStyle(color: Colors.white70),
                               ),
                             ),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 36,
-                                  height: 36,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    color: isCurrent
-                                        ? AppColors.primary
-                                        : (isDark
-                                            ? const Color(0xFF2E2940)
-                                            : Colors.white),
-                                  ),
-                                  child: Icon(
-                                    sound.icon,
-                                    size: 17,
-                                    color: isCurrent
-                                        ? Colors.white
-                                        : (isDark
-                                            ? Colors.white70
-                                            : AppColors.secondary),
-                                  ),
-                                ),
-                                const SizedBox(width: 12),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment:
-                                        CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        sound.name,
-                                        style: TextStyle(
-                                          fontSize: 14.5,
-                                          fontWeight: FontWeight.w700,
-                                          color: isCurrent
-                                              ? AppColors.primary
-                                              : AppColors.textPrimary,
-                                        ),
-                                      ),
-                                      const SizedBox(height: 2),
-                                      Text(
-                                        sound.description,
-                                        style: TextStyle(
-                                          fontSize: 11.5,
-                                          color: AppColors.textSecondary,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                                if (isCurrent)
-                                  Container(
-                                    padding: const EdgeInsets.all(4),
-                                    decoration: const BoxDecoration(
-                                      shape: BoxShape.circle,
-                                      color: AppColors.primary,
-                                    ),
-                                    child: const Icon(
-                                      LucideIcons.check,
-                                      size: 13,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                              ],
-                            ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withAlpha(isDark ? 30 : 15),
+                          borderRadius: BorderRadius.circular(16),
+                          border: Border.all(
+                            color: AppColors.primary.withAlpha(80),
+                            width: 1.2,
                           ),
                         ),
-                      );
-                    }),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            const Icon(
+                              LucideIcons.upload,
+                              size: 18,
+                              color: AppColors.primary,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              "Upload Custom Audio File",
+                              style: TextStyle(
+                                fontSize: 13.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 14),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxHeight: MediaQuery.of(context).size.height * 0.45,
+                      ),
+                      child: SingleChildScrollView(
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            ...AppSettings.instance.allSounds.map((sound) {
+                              final isCurrent = sound.id == selected;
+                              final isCurrentlyPlaying = AppSettings.instance.isPlaying &&
+                                  AppSettings.instance.currentlyPlayingId == sound.id;
+
+                              return Padding(
+                                padding: const EdgeInsets.only(bottom: 8.0),
+                                child: GestureDetector(
+                                  onTap: () async {
+                                    HapticFeedback.selectionClick();
+                                    await AppSettings.instance
+                                        .setNotificationSound(sound.id);
+                                    await AppSettings.instance.previewSound(
+                                      sound.id,
+                                      maxDurationSeconds: 4,
+                                    );
+                                  },
+                                  child: AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    padding: const EdgeInsets.symmetric(
+                                      horizontal: 14,
+                                      vertical: 12,
+                                    ),
+                                    decoration: BoxDecoration(
+                                      color: isCurrent
+                                          ? (isDark
+                                              ? AppColors.primary.withAlpha(40)
+                                              : AppColors.primary.withAlpha(20))
+                                          : (isDark
+                                              ? const Color(0xFF221E30)
+                                              : const Color(0xFFF7F3FB)),
+                                      borderRadius: BorderRadius.circular(16),
+                                      border: Border.all(
+                                        color: isCurrent
+                                            ? AppColors.primary
+                                                .withAlpha(isDark ? 120 : 90)
+                                            : (isDark
+                                                ? const Color(0x18FFFFFF)
+                                                : const Color(0x10000000)),
+                                        width: isCurrent ? 1.4 : 1.0,
+                                      ),
+                                    ),
+                                    child: Row(
+                                      children: [
+                                        Container(
+                                          width: 36,
+                                          height: 36,
+                                          decoration: BoxDecoration(
+                                            shape: BoxShape.circle,
+                                            color: isCurrent
+                                                ? AppColors.primary
+                                                : (isDark
+                                                    ? const Color(0xFF2E2940)
+                                                    : Colors.white),
+                                          ),
+                                          child: Icon(
+                                            sound.icon,
+                                            size: 17,
+                                            color: isCurrent
+                                                ? Colors.white
+                                                : (isDark
+                                                    ? Colors.white70
+                                                    : AppColors.secondary),
+                                          ),
+                                        ),
+                                        const SizedBox(width: 12),
+                                        Expanded(
+                                          child: Column(
+                                            crossAxisAlignment:
+                                                CrossAxisAlignment.start,
+                                            children: [
+                                              Row(
+                                                children: [
+                                                  Flexible(
+                                                    child: Text(
+                                                      sound.name,
+                                                      style: TextStyle(
+                                                        fontSize: 14.5,
+                                                        fontWeight: FontWeight.w700,
+                                                        color: isCurrent
+                                                            ? AppColors.primary
+                                                            : AppColors.textPrimary,
+                                                      ),
+                                                      maxLines: 1,
+                                                      overflow: TextOverflow.ellipsis,
+                                                    ),
+                                                  ),
+                                                  if (sound.isCustom) ...[
+                                                    const SizedBox(width: 6),
+                                                    Container(
+                                                      padding: const EdgeInsets.symmetric(
+                                                        horizontal: 6,
+                                                        vertical: 2,
+                                                      ),
+                                                      decoration: BoxDecoration(
+                                                        color: isDark
+                                                            ? Colors.white.withAlpha(25)
+                                                            : Colors.black.withAlpha(15),
+                                                        borderRadius:
+                                                            BorderRadius.circular(4),
+                                                      ),
+                                                      child: const Text(
+                                                        'CUSTOM',
+                                                        style: TextStyle(
+                                                          fontSize: 8.5,
+                                                          fontWeight: FontWeight.w800,
+                                                        ),
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ],
+                                              ),
+                                              const SizedBox(height: 2),
+                                              Text(
+                                                sound.description,
+                                                style: TextStyle(
+                                                  fontSize: 11.5,
+                                                  color: AppColors.textSecondary,
+                                                ),
+                                                maxLines: 1,
+                                                overflow: TextOverflow.ellipsis,
+                                              ),
+                                            ],
+                                          ),
+                                        ),
+                                        if (isCurrentlyPlaying)
+                                          Container(
+                                            margin: const EdgeInsets.only(right: 8),
+                                            padding: const EdgeInsets.symmetric(
+                                              horizontal: 7,
+                                              vertical: 3,
+                                            ),
+                                            decoration: BoxDecoration(
+                                              color: AppColors.primary,
+                                              borderRadius: BorderRadius.circular(8),
+                                            ),
+                                            child: const Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Icon(
+                                                  LucideIcons.volume2,
+                                                  size: 11,
+                                                  color: Colors.white,
+                                                ),
+                                                SizedBox(width: 3),
+                                                Text(
+                                                  'Playing',
+                                                  style: TextStyle(
+                                                    fontSize: 10,
+                                                    fontWeight: FontWeight.w700,
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                              ],
+                                            ),
+                                          ),
+                                        if (sound.isCustom)
+                                          GestureDetector(
+                                            onTap: () async {
+                                              HapticFeedback.lightImpact();
+                                              await AppSettings.instance
+                                                  .removeCustomAudio(sound.id);
+                                            },
+                                            child: Padding(
+                                              padding: const EdgeInsets.all(4.0),
+                                              child: Icon(
+                                                LucideIcons.trash2,
+                                                size: 15,
+                                                color: AppColors.error.withAlpha(200),
+                                              ),
+                                            ),
+                                          ),
+                                        if (isCurrent && !isCurrentlyPlaying)
+                                          Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              shape: BoxShape.circle,
+                                              color: AppColors.primary,
+                                            ),
+                                            child: const Icon(
+                                              LucideIcons.check,
+                                              size: 13,
+                                              color: Colors.white,
+                                            ),
+                                          ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              );
+                            }),
+                          ],
+                        ),
+                      ),
+                    ),
                   ],
                 ),
               ),

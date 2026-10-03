@@ -14,8 +14,12 @@ class UpdateReminder {
     required int index,
     DateTime? issuedDate,
   }) async {
-    final token = await FirebaseAuth.instance.currentUser!.getIdToken();
-    String uid = FirebaseAuth.instance.currentUser!.uid;
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) {
+      return "Updated locally";
+    }
+    final token = await user.getIdToken();
+    String uid = user.uid;
     print("Updating reminder with index: $index");
     print(uid);
     Response response = await api.sendRequest.patch(

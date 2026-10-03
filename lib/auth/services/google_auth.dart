@@ -5,7 +5,6 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/user_local.dart';
 import 'package:lmk/data/models/local/local_user.dart';
-import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/launch/launch.dart';
 import 'package:lmk/data/repository/userRegister.dart';
 import 'package:lmk/services/sync_service.dart';
@@ -148,27 +147,38 @@ class AuthMethods {
   }
 
   Future<void> signInAsGuest(BuildContext context, {required String name}) async {
-    // Name is already collected by the caller (sign-in page).
-    // Save the local guest user and navigate to the app.
     try {
+      String guestUid = "guest_${DateTime.now().millisecondsSinceEpoch}";
+      try {
+        final anonCred = await auth.signInAnonymously();
+        if (anonCred.user != null) {
+          guestUid = anonCred.user!.uid;
+        }
+      } catch (e) {
+        print('Firebase anonymous auth not configured or offline: $e');
+      }
+
       final details = UserLocal()
-        ..uid = "guest_${DateTime.now().millisecondsSinceEpoch}"
-        ..name = name
+        ..uid = guestUid
+        ..name = name.trim().isNotEmpty ? name.trim() : "Guest"
         ..guest = true;
       await UserLocalDataSource().saveUser(details);
+
       if (!context.mounted) return;
-      Navigator.pushReplacement(
-        context,
-        MaterialPageRoute(builder: (_) => Launch()),
-      );
+      Navigator.pushNamedAndRemoveUntil(context, '/home', (route) => false);
     } catch (e) {
       print('Guest sign-in error: $e');
+      rethrow;
     }
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
-    await auth.signOut();
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
+    try {
+      await auth.signOut();
+    } catch (_) {}
     await UserLocalDataSource().clearUser();
   }
 }

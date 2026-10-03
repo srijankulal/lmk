@@ -2,6 +2,7 @@ import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/data/local/user_local.dart';
 
 class Launch extends StatefulWidget {
   const Launch({super.key});
@@ -35,13 +36,18 @@ class _LaunchState extends State<Launch> with SingleTickerProviderStateMixin {
 
     _animController.forward();
 
-    // Smooth auto-transition without requiring user to tap any manual arrow
-    Timer(const Duration(milliseconds: 750), () {
+    // Smooth auto-transition: check both Firebase Auth and local Guest profile
+    Timer(const Duration(milliseconds: 750), () async {
       if (!mounted) return;
-      if (FirebaseAuth.instance.currentUser == null) {
-        Navigator.pushReplacementNamed(context, '/signIn');
-      } else {
+      final localUser = await UserLocalDataSource().getUser();
+      final hasLocalUser = localUser != null && localUser.uid.isNotEmpty;
+      final hasFirebaseUser = FirebaseAuth.instance.currentUser != null;
+
+      if (!mounted) return;
+      if (hasFirebaseUser || hasLocalUser) {
         Navigator.pushReplacementNamed(context, '/home');
+      } else {
+        Navigator.pushReplacementNamed(context, '/signIn');
       }
     });
   }

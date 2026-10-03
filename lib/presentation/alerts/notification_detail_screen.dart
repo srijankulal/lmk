@@ -929,6 +929,27 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen>
     );
   }
 
+  Future<void> _dismissAndDisable() async {
+    setState(() => _isEnabled = false);
+    if (_reminderIndex != null) {
+      await flutterLocalNotificationsPlugin.cancel(_reminderIndex!);
+    }
+    await _saveToDatabase(_scheduledDate, _scheduledTime, false);
+    if (mounted) {
+      ShadToaster.of(context).show(
+        const ShadToast(
+          title: Text('Reminder Dismissed', style: TextStyle(fontWeight: FontWeight.bold)),
+          description: Text('This reminder has been turned off.'),
+        ),
+      );
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
+  }
+
   Widget _buildBottomBar(BuildContext context) {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
@@ -936,35 +957,61 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen>
         color: AppColors.surface,
         border: Border(top: BorderSide(color: AppColors.borderSubtle)),
       ),
-      child: SizedBox(
-        width: double.infinity,
-        height: 52,
-        child: ElevatedButton.icon(
-          style: ElevatedButton.styleFrom(
-            backgroundColor: ThemeController.instance.isDarkMode
-                ? Colors.white
-                : AppColors.surfaceDark,
-            foregroundColor: ThemeController.instance.isDarkMode
-                ? const Color(0xFF121019)
-                : Colors.white,
-            elevation: 0,
-            shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(16),
+      child: Row(
+        children: [
+          Expanded(
+            child: SizedBox(
+              height: 52,
+              child: OutlinedButton.icon(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.textSecondary,
+                  side: BorderSide(color: AppColors.borderSubtle),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: const Icon(Icons.notifications_off_outlined, size: 18),
+                label: const Text(
+                  'Dismiss',
+                  style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                ),
+                onPressed: _dismissAndDisable,
+              ),
             ),
           ),
-          icon: const Icon(Icons.check_rounded, size: 20),
-          label: const Text(
-            'Done',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+          const SizedBox(width: 12),
+          Expanded(
+            child: SizedBox(
+              height: 52,
+              child: ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: ThemeController.instance.isDarkMode
+                      ? Colors.white
+                      : AppColors.surfaceDark,
+                  foregroundColor: ThemeController.instance.isDarkMode
+                      ? const Color(0xFF121019)
+                      : Colors.white,
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
+                ),
+                icon: const Icon(Icons.check_rounded, size: 20),
+                label: const Text(
+                  'Done',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                onPressed: () {
+                  if (Navigator.canPop(context)) {
+                    Navigator.pop(context);
+                  } else {
+                    Navigator.pushReplacementNamed(context, '/home');
+                  }
+                },
+              ),
+            ),
           ),
-          onPressed: () {
-            if (Navigator.canPop(context)) {
-              Navigator.pop(context);
-            } else {
-              Navigator.pushReplacementNamed(context, '/home');
-            }
-          },
-        ),
+        ],
       ),
     );
   }

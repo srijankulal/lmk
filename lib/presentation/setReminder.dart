@@ -6,6 +6,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/reminder_local.dart';
+import 'package:lmk/data/local/user_local.dart';
 import 'package:lmk/data/models/local/local_reminder.dart';
 import 'package:lmk/data/models/post/post.dart';
 import 'package:lmk/data/repository/remote/create_reminder.dart';
@@ -23,6 +24,7 @@ class SetReminderScreen extends StatefulWidget {
 
 class _SetReminderScreenState extends State<SetReminderScreen> {
   final _formKey = GlobalKey<ShadFormState>();
+  final _datePopoverController = ShadPopoverController();
   TimeOfDay? _selectedTime;
   DocData? _args;
 
@@ -30,6 +32,12 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
   void didChangeDependencies() {
     super.didChangeDependencies();
     _args ??= ModalRoute.of(context)!.settings.arguments as DocData;
+  }
+
+  @override
+  void dispose() {
+    _datePopoverController.dispose();
+    super.dispose();
   }
 
   @override
@@ -106,7 +114,11 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                           ShadDatePickerFormField(
                             id: 'Reminder Date',
                             label: const Text('Reminder date'),
+                            popoverController: _datePopoverController,
                             closeOnSelection: true,
+                            onChanged: (_) {
+                              _datePopoverController.hide();
+                            },
                             placeholder: const Text('Select reminder date'),
                             // Clamp initial value so it is never in the past
                             initialValue:
@@ -379,7 +391,11 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
     if (!mounted) return;
 
     final user = FirebaseAuth.instance.currentUser;
-    final uid = user?.uid ?? '';
+    String uid = user?.uid ?? '';
+    if (uid.isEmpty) {
+      final userLocal = await UserLocalDataSource().getUser();
+      uid = userLocal?.uid ?? 'guest';
+    }
 
     try {
       final repoLocal = ReminderLocal(
@@ -392,34 +408,35 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
         issuedDate: args.issueDate ?? DateTime.now(),
         reminderDate: args.reminderDate ?? selectedDate,
       );
-      // print('reminder data ${repo.reminderDate}');
-      // print('Saving local reminder: $repo');
       await ReminderLocalDataSource().addReminder(repoLocal);
+
       final hasInternet = await InternetConnection().hasInternetAccess;
-      if (hasInternet) {
-        final token = await user?.getIdToken() ?? '';
-        final repo = CreateReminderRepository();
-        await repo.createReminder(
-          token: token,
-          uid: uid,
-          title: 'Reminder for ${args.documentType}',
-          time:
-              '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
-          expiryDate: args.expiryDate ?? selectedDate,
-          setDate: DateTime(
-            selectedDate.year,
-            selectedDate.month,
-            selectedDate.day,
-            selectedTime.hour,
-            selectedTime.minute,
-          ),
-          isEnabled: true,
-          index: notificationId,
-          issuedDate: args.issueDate ?? DateTime.now(),
-        );
-        await ReminderLocalDataSource().updateReminder(
-          repoLocal..synced = true,
-        );
+      if (hasInternet && user != null) {
+        final token = await user.getIdToken();
+        if (token != null && token.isNotEmpty) {
+          final repo = CreateReminderRepository();
+          await repo.createReminder(
+            token: token,
+            uid: uid,
+            title: 'Reminder for ${args.documentType}',
+            time:
+                '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+            expiryDate: args.expiryDate ?? selectedDate,
+            setDate: DateTime(
+              selectedDate.year,
+              selectedDate.month,
+              selectedDate.day,
+              selectedTime.hour,
+              selectedTime.minute,
+            ),
+            isEnabled: true,
+            index: notificationId,
+            issuedDate: args.issueDate ?? DateTime.now(),
+          );
+          await ReminderLocalDataSource().updateReminder(
+            repoLocal..synced = true,
+          );
+        }
       }
       // await repo.createReminder(
       //   token: token,

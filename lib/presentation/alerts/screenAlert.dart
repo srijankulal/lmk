@@ -1,9 +1,15 @@
+import 'dart:convert';
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:isar/isar.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/data/local/reminder_local.dart';
+import 'package:lmk/data/models/local/local_reminder.dart';
+import 'package:lmk/data/repository/local/isar_service.dart';
 import 'package:lmk/main.dart';
 import 'package:lmk/presentation/alerts/notification_detail_screen.dart';
+import 'package:lmk/services/sync_service.dart';
 import 'package:timezone/timezone.dart' as tz;
 
 class Screenalert extends StatefulWidget {
@@ -18,6 +24,74 @@ class _ScreenalertState extends State<Screenalert>
     with SingleTickerProviderStateMixin {
   late AnimationController _controller;
   late Animation<double> _scaleAnimation;
+  bool _isDismissing = false;
+
+  Future<void> _handleDismiss(BuildContext context) async {
+    if (_isDismissing) return;
+    setState(() => _isDismissing = true);
+
+    try {
+      int? reminderIndex;
+      int? reminderId;
+      String? title;
+
+      if (widget.payload != null && widget.payload!.isNotEmpty) {
+        final raw = widget.payload!.trim();
+        if (raw.startsWith('{') && raw.endsWith('}')) {
+          final data = jsonDecode(raw) as Map<String, dynamic>;
+          reminderIndex = data['index'] as int?;
+          reminderId = data['id'] as int?;
+          title = data['title'] as String? ?? data['documentType'] as String?;
+        } else if (raw.contains('|')) {
+          final parts = raw.split('|');
+          title = parts[0];
+          if (parts.length > 2) {
+            reminderIndex = int.tryParse(parts[2]);
+          }
+        } else {
+          title = raw;
+        }
+      }
+
+      final ds = ReminderLocalDataSource();
+      ReminderLocal? match;
+      if (reminderIndex != null) {
+        match = await ds.getReminderByIndex(reminderIndex);
+      }
+      if (match == null && reminderId != null) {
+        match = await ds.getReminderById(reminderId);
+      }
+      if (match == null && title != null && title.isNotEmpty) {
+        final isar = await IsarService().db;
+        match = await isar.reminderLocals.filter().titleEqualTo(title).findFirst();
+      }
+
+      if (match != null) {
+        match.isEnabled = false;
+        match.synced = false;
+        match.updatedAt = DateTime.now();
+        await ds.updateReminder(match);
+        if (match.index != null) {
+          await flutterLocalNotificationsPlugin.cancel(match.index!);
+        }
+        try {
+          SyncService().syncAll();
+        } catch (_) {}
+      } else if (reminderIndex != null) {
+        await flutterLocalNotificationsPlugin.cancel(reminderIndex);
+      }
+    } catch (e) {
+      debugPrint('Error dismissing reminder: $e');
+    }
+
+    if (context.mounted) {
+      if (Navigator.canPop(context)) {
+        Navigator.pop(context);
+      } else {
+        Navigator.pushReplacementNamed(context, '/home');
+      }
+    }
+  }
 
   @override
   void initState() {
@@ -232,13 +306,7 @@ class _ScreenalertState extends State<Screenalert>
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                      onPressed: () {
-                        if (Navigator.canPop(context)) {
-                          Navigator.pop(context);
-                        } else {
-                          Navigator.pushReplacementNamed(context, '/home');
-                        }
-                      },
+                      onPressed: () => _handleDismiss(context),
                     ),
                   ),
                   const SizedBox(height: 16),

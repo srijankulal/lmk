@@ -6,8 +6,12 @@ class DeleteReminder {
   Api api = Api();
   Future<String> deleteReminder(String reminderId) async {
     try {
-      final token = await FirebaseAuth.instance.currentUser!.getIdToken();
-      String uid = FirebaseAuth.instance.currentUser!.uid;
+      final user = FirebaseAuth.instance.currentUser;
+      if (user == null) {
+        return "Deleted locally";
+      }
+      final token = await user.getIdToken();
+      String uid = user.uid;
       Response response = await api.sendRequest.delete(
         '/user/$uid/deleteReminder',
         options: Options(
