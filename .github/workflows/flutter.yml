@@ -3,9 +3,13 @@ name: Flutter CI & Build
 on:
   push:
     branches: [ "main" ]
+    tags: [ "v*" ]
   pull_request:
     branches: [ "main" ]
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build:
@@ -15,6 +19,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Set up Java Development Kit (JDK 21)
         uses: actions/setup-java@v4
@@ -37,8 +43,20 @@ jobs:
       - name: Run widget & unit tests
         run: flutter test
 
+      - name: Extract version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([^+]+).*/\1/' | tr -d ' "\r')
+          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Resolved version: $VERSION (tag: v$VERSION)"
+
       - name: Build Android Release APK
         run: flutter build apk --release --android-skip-build-dependency-validation
+
+      - name: Prepare named APK asset
+        run: |
+          cp build/app/outputs/flutter-apk/app-release.apk "build/app/outputs/flutter-apk/LMK-${{ steps.version.outputs.tag }}.apk"
 
       - name: Upload Release APK Artifact
         uses: actions/upload-artifact@v4
@@ -46,3 +64,18 @@ jobs:
           name: lmk-release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
           retention-days: 14
+
+      - name: Publish / Update GitHub Release
+        if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/'))
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ steps.version.outputs.tag }}
+          name: "LMK ${{ steps.version.outputs.tag }}"
+          prerelease: true
+          make_latest: true
+          generate_release_notes: true
+          files: |
+            build/app/outputs/flutter-apk/app-release.apk
+            build/app/outputs/flutter-apk/LMK-${{ steps.version.outputs.tag }}.apk
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

@@ -2060,7 +2060,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'LMK — Let Me Know • v0.1.0 (Alpha)',
+                          'LMK — Let Me Know • v${UpdateService.currentVersion}',
                           style: TextStyle(
                             fontSize: 11.5,
                             fontWeight: FontWeight.w600,

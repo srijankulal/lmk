@@ -63,6 +63,6 @@
 
 ## 📦 Release Information
 
-- **Current Version**: `0.1.0 (Alpha)`
+- **Current Version**: `0.1.1 (Alpha)`
 - **Target SDK**: Android 34 / 35 (Android 14/15 ready)
 - **Minimum SDK**: Android 21 (Lollipop+)

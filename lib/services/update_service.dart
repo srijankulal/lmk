@@ -66,8 +66,8 @@ class UpdateService {
   UpdateService._();
   static final UpdateService instance = UpdateService._();
 
-  static const String currentVersion = '0.1.0-alpha';
-  static const int currentBuildNumber = 1;
+  static const String currentVersion = '0.1.1-alpha';
+  static const int currentBuildNumber = 2;
   static const String githubRepo = 'srijankulal/lmk';
   static const String _dismissedKey = 'lmk_dismissed_update_version';
   static const String _dismissedTimeKey = 'lmk_dismissed_update_time';
