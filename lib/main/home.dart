@@ -17,7 +17,10 @@ import 'package:lmk/services/sync_service.dart';
 import 'package:lmk/services/settings_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/presentation/feedback_sheet.dart';
 import 'package:lmk/presentation/start_screen.dart';
+import 'package:lmk/presentation/update_dialog.dart';
+import 'package:lmk/services/update_service.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 
 class Home extends StatefulWidget {
@@ -110,7 +113,19 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     // system has a visible activity to attach the permission dialog to.
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _requestFullScreenPermission();
+      _checkAutoUpdate();
     });
+  }
+
+  Future<void> _checkAutoUpdate() async {
+    await Future.delayed(const Duration(milliseconds: 2500));
+    if (!mounted || !_isOnline) return;
+    try {
+      final release = await UpdateService.instance.checkForUpdate(force: false);
+      if (release != null && mounted) {
+        UpdateDialog.show(context, release, isManual: false);
+      }
+    } catch (_) {}
   }
 
   void _onThemeChanged() {
@@ -1739,6 +1754,186 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                                         ),
                                         Text(
                                           "How OCR, creation buttons & filters work",
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              LucideIcons.chevronRight,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // 6. Check for Updates Tile
+                    GestureDetector(
+                      onTap: () async {
+                        HapticFeedback.lightImpact();
+                        ShadToaster.of(context).show(
+                          const ShadToast(
+                            duration: Duration(seconds: 1),
+                            title: Text('Checking for updates...'),
+                          ),
+                        );
+                        final release = await UpdateService.instance.checkForUpdate(force: true);
+                        if (!context.mounted) return;
+                        if (release != null) {
+                          UpdateDialog.show(context, release, isManual: true);
+                        } else {
+                          ShadToaster.of(context).show(
+                            const ShadToast(
+                              duration: Duration(seconds: 2),
+                              backgroundColor: AppColors.success,
+                              title: Text(
+                                'You\'re Up-to-Date! ✨',
+                                style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                              ),
+                              description: Text(
+                                'LMK v${UpdateService.currentVersion} is the latest version.',
+                                style: TextStyle(color: Colors.white70),
+                              ),
+                            ),
+                          );
+                        }
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF221E30) : const Color(0xFFF5F0FB),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark ? const Color(0x20FFFFFF) : const Color(0x10000000),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark
+                                          ? const Color(0xFF2E2940)
+                                          : Colors.white,
+                                    ),
+                                    child: const Icon(
+                                      LucideIcons.arrowUpCircle,
+                                      size: 18,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Check for Updates",
+                                          style: TextStyle(
+                                            fontSize: 14.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          "v${UpdateService.currentVersion} • Tap to check latest release",
+                                          style: TextStyle(
+                                            fontSize: 11.5,
+                                            color: AppColors.textSecondary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            Icon(
+                              LucideIcons.chevronRight,
+                              size: 18,
+                              color: AppColors.textSecondary,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+
+                    // 7. Share Feedback & Opinion Tile
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        Navigator.pop(context);
+                        FeedbackSheet.show(context);
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: isDark ? const Color(0xFF221E30) : const Color(0xFFF5F0FB),
+                          borderRadius: BorderRadius.circular(20),
+                          border: Border.all(
+                            color: isDark ? const Color(0x20FFFFFF) : const Color(0x10000000),
+                          ),
+                        ),
+                        child: Row(
+                          children: [
+                            Expanded(
+                              child: Row(
+                                children: [
+                                  Container(
+                                    width: 36,
+                                    height: 36,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: isDark
+                                          ? const Color(0xFF2E2940)
+                                          : Colors.white,
+                                    ),
+                                    child: const Icon(
+                                      LucideIcons.messageSquareHeart,
+                                      size: 18,
+                                      color: Color(0xFFEC4899),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 12),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          "Feedback & Opinion",
+                                          style: TextStyle(
+                                            fontSize: 14.5,
+                                            fontWeight: FontWeight.w700,
+                                            color: AppColors.textPrimary,
+                                          ),
+                                          maxLines: 1,
+                                          overflow: TextOverflow.ellipsis,
+                                        ),
+                                        Text(
+                                          "Share ideas, report bugs or give a review",
                                           style: TextStyle(
                                             fontSize: 11.5,
                                             color: AppColors.textSecondary,
