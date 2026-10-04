@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
+import 'package:lmk/components/app_loader.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/reminder_local.dart';
 import 'package:lmk/data/models/local/local_reminder.dart';
@@ -398,7 +399,7 @@ class _NotificationDetailScreenState extends State<NotificationDetailScreen>
       return Scaffold(
         backgroundColor: AppColors.background,
         body: const Center(
-          child: CircularProgressIndicator(color: AppColors.primary),
+          child: AppLoader(size: 28),
         ),
       );
     }

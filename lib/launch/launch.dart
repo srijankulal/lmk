@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:lmk/components/app_loader.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/user_local.dart';
 
@@ -121,16 +122,7 @@ class _LaunchState extends State<Launch> with SingleTickerProviderStateMixin {
                       ),
                     ),
                     const SizedBox(height: 36),
-                    const SizedBox(
-                      width: 24,
-                      height: 24,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2.2,
-                        valueColor: AlwaysStoppedAnimation<Color>(
-                          AppColors.primary,
-                        ),
-                      ),
-                    ),
+                    const AppLoader(size: 24),
                   ],
                 ),
               ),

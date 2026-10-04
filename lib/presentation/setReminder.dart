@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
+import 'package:lmk/components/app_loader.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/data/local/reminder_local.dart';
 import 'package:lmk/data/local/user_local.dart';
@@ -277,9 +278,9 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                                     ? const SizedBox(
                                         width: 18,
                                         height: 18,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        child: AppLoader(
+                                          size: 16,
+                                          color: Colors.white,
                                         ),
                                       )
                                     : const Text('Set reminder'),

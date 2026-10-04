@@ -3,9 +3,11 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:lmk/components/app_loader.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/services/feedback_service.dart';
 import 'package:lmk/services/update_service.dart';
+import 'package:lmk/services/wiredash_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
 class FeedbackSheet extends StatefulWidget {
@@ -32,6 +34,17 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
   final TextEditingController _emailController = TextEditingController();
   bool _includeDeviceInfo = true;
   bool _isSubmitting = false;
+
+  void _launchWiredash() {
+    HapticFeedback.mediumImpact();
+    final user = FirebaseAuth.instance.currentUser;
+    Navigator.of(context).pop();
+    WiredashService.show(
+      context,
+      userEmail: user?.email ?? _emailController.text.trim(),
+      userId: user?.uid,
+    );
+  }
 
   final List<({int rating, String emoji, String label})> _ratings = const [
     (rating: 1, emoji: '😡', label: 'Terrible'),
@@ -199,7 +212,117 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 16),
+
+                  // Wiredash Interactive Feedback Hero Card
+                  Container(
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: isDark
+                            ? [const Color(0xFF2C2245), const Color(0xFF1F1C30)]
+                            : [const Color(0xFFF3E8FF), const Color(0xFFEDE9FE)],
+                        begin: Alignment.topLeft,
+                        end: Alignment.bottomRight,
+                      ),
+                      borderRadius: BorderRadius.circular(20),
+                      border: Border.all(
+                        color: const Color(0xFF8B5CF6).withAlpha(isDark ? 80 : 50),
+                      ),
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF8B5CF6).withAlpha(40),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                LucideIcons.sparkles,
+                                color: Color(0xFF8B5CF6),
+                                size: 16,
+                              ),
+                            ),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Wiredash Visual Feedback',
+                                    style: TextStyle(
+                                      fontSize: 14,
+                                      fontWeight: FontWeight.w800,
+                                      color: Color(0xFF8B5CF6),
+                                    ),
+                                  ),
+                                  Text(
+                                    'Draw on screen, annotate & report bugs live',
+                                    style: TextStyle(
+                                      fontSize: 11,
+                                      color: isDark ? Colors.white70 : const Color(0xFF4C1D95),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 10),
+                        ElevatedButton.icon(
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF8B5CF6),
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                            padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                          ),
+                          onPressed: _launchWiredash,
+                          icon: const Icon(LucideIcons.penTool, size: 14),
+                          label: const Text(
+                            'Launch Screen Annotation & Feedback',
+                            style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Divider
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Divider(
+                          color: isDark ? const Color(0x30FFFFFF) : const Color(0x20000000),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.symmetric(horizontal: 10),
+                        child: Text(
+                          'OR QUICK OPINION',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.w700,
+                            letterSpacing: 0.8,
+                            color: AppColors.textTertiary,
+                          ),
+                        ),
+                      ),
+                      Expanded(
+                        child: Divider(
+                          color: isDark ? const Color(0x30FFFFFF) : const Color(0x20000000),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 14),
 
                   // Rating Emojis Row
                   Container(
@@ -392,9 +515,9 @@ class _FeedbackSheetState extends State<FeedbackSheet> {
                         ? const SizedBox(
                             width: 18,
                             height: 18,
-                            child: CircularProgressIndicator(
-                              strokeWidth: 2,
-                              valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                            child: AppLoader(
+                              size: 16,
+                              color: Colors.white,
                             ),
                           )
                         : const Text(

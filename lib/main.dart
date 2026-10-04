@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:lmk/auth/screen/sign-in-page.dart';
@@ -13,6 +14,8 @@ import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/services/settings_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:wiredash/wiredash.dart';
+import 'package:lmk/services/wiredash_service.dart';
 import 'launch/launch.dart';
 import 'package:timezone/data/latest_all.dart' as tz;
 import 'package:firebase_core/firebase_core.dart';
@@ -33,6 +36,25 @@ void handleNotificationPayload(String? payload) {
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Automatic crash capture and bug reporting via Wiredash
+  FlutterError.onError = (FlutterErrorDetails details) {
+    FlutterError.presentError(details);
+    WiredashService.instance.handleCrash(
+      details.exception,
+      details.stack,
+      context: navigatorKey.currentContext,
+    );
+  };
+  PlatformDispatcher.instance.onError = (Object error, StackTrace stack) {
+    WiredashService.instance.handleCrash(
+      error,
+      stack,
+      context: navigatorKey.currentContext,
+    );
+    return false;
+  };
+
   await Firebase.initializeApp();
   tz.initializeTimeZones();
   await AppSettings.instance.init();
@@ -85,7 +107,7 @@ void main() async {
   await flutterLocalNotificationsPlugin.initialize(
     initSettings,
     onDidReceiveNotificationResponse: (response) async {
-      print("Notification clicked with payload: ${response.payload}");
+      debugPrint("Notification clicked with payload: ${response.payload}");
       if (response.payload != null) {
         await prefs.setString('payload', response.payload!);
         await prefs.setString('pendingNotificationPayload', response.payload!);
@@ -127,40 +149,67 @@ class MyApp extends StatefulWidget {
 class _MyAppState extends State<MyApp> {
   @override
   Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: ThemeController.instance,
+    return ListenableBuilder(
+      listenable: Listenable.merge([
+        ThemeController.instance,
+        WiredashService.instance,
+      ]),
       builder: (context, _) {
         final isDark = ThemeController.instance.isDarkMode;
-        return ShadApp(
-          navigatorKey: navigatorKey,
-          theme: ShadThemeData(
-            brightness: Brightness.light,
-            colorScheme: const ShadSlateColorScheme.light(
-              primary: AppColors.primary,
-              background: Color(0xFFF1F2E8),
-            ),
-          ),
-          darkTheme: ShadThemeData(
-            brightness: Brightness.dark,
-            colorScheme: const ShadSlateColorScheme.dark(
-              primary: AppColors.primary,
-              background: Color(0xFF101516),
-            ),
-          ),
-          themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
-          initialRoute: widget.seenOnboarding ? '/' : '/start',
-          routes: {
-            '/': (context) => AuthWrapper(),
-            '/start': (context) => const StartScreen(),
-            '/signIn': (context) => const SignInPage(),
-            '/launch': (context) => const Launch(),
-            '/home': (context) => const Home(),
-            '/docForm': (context) => DocForm(),
-            '/setReminder': (context) => const SetReminderScreen(),
-            '/screenAlert': (context) => const Screenalert(),
-            '/notificationDetail': (context) =>
-                const NotificationDetailScreen(),
+        return Wiredash(
+          projectId: WiredashService.projectId,
+          secret: WiredashService.secret,
+          collectMetaData: (metaData) {
+            if (WiredashService.instance.lastError != null) {
+              metaData.custom['last_crash_error'] =
+                  WiredashService.instance.lastError!;
+            }
+            if (WiredashService.instance.lastStackTrace != null) {
+              metaData.custom['last_crash_stack'] =
+                  WiredashService.instance.lastStackTrace!;
+            }
+            if (WiredashService.instance.lastErrorTime != null) {
+              metaData.custom['crash_timestamp'] =
+                  WiredashService.instance.lastErrorTime!.toIso8601String();
+            }
+            return metaData;
           },
+          theme: WiredashThemeData(
+            brightness: isDark ? Brightness.dark : Brightness.light,
+            primaryColor: AppColors.primary,
+            secondaryColor: AppColors.accent,
+          ),
+          child: ShadApp(
+            navigatorKey: navigatorKey,
+            theme: ShadThemeData(
+              brightness: Brightness.light,
+              colorScheme: const ShadSlateColorScheme.light(
+                primary: AppColors.primary,
+                background: Color(0xFFF1F2E8),
+              ),
+            ),
+            darkTheme: ShadThemeData(
+              brightness: Brightness.dark,
+              colorScheme: const ShadSlateColorScheme.dark(
+                primary: AppColors.primary,
+                background: Color(0xFF101516),
+              ),
+            ),
+            themeMode: isDark ? ThemeMode.dark : ThemeMode.light,
+            initialRoute: widget.seenOnboarding ? '/' : '/start',
+            routes: {
+              '/': (context) => AuthWrapper(),
+              '/start': (context) => const StartScreen(),
+              '/signIn': (context) => const SignInPage(),
+              '/launch': (context) => const Launch(),
+              '/home': (context) => const Home(),
+              '/docForm': (context) => DocForm(),
+              '/setReminder': (context) => const SetReminderScreen(),
+              '/screenAlert': (context) => const Screenalert(),
+              '/notificationDetail': (context) =>
+                  const NotificationDetailScreen(),
+            },
+          ),
         );
       },
     );

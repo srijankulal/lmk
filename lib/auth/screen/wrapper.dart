@@ -1,6 +1,7 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:lmk/auth/screen/sign-in-page.dart';
+import 'package:lmk/components/app_loader.dart';
 import 'package:lmk/data/local/user_local.dart';
 import 'package:lmk/data/models/local/local_user.dart';
 import 'package:lmk/main/home.dart';
@@ -16,7 +17,7 @@ class AuthWrapper extends StatelessWidget {
         if (localSnapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(
-              child: CircularProgressIndicator(),
+              child: AppLoader(size: 28),
             ),
           );
         }

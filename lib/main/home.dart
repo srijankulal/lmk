@@ -17,6 +17,7 @@ import 'package:lmk/services/sync_service.dart';
 import 'package:lmk/services/settings_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:lmk/components/colours/colours.dart';
+import 'package:lmk/components/app_loader.dart';
 import 'package:lmk/presentation/feedback_sheet.dart';
 import 'package:lmk/presentation/start_screen.dart';
 import 'package:lmk/presentation/update_dialog.dart';
@@ -1589,11 +1590,11 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                                 children: [
                                   if (_isSyncing)
                                     const SizedBox(
-                                      width: 12,
-                                      height: 12,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                        valueColor: AlwaysStoppedAnimation<Color>(AppColors.primary),
+                                      width: 14,
+                                      height: 14,
+                                      child: AppLoader(
+                                        size: 12,
+                                        color: AppColors.primary,
                                       ),
                                     )
                                   else
@@ -1881,7 +1882,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                     ),
                     const SizedBox(height: 10),
 
-                    // 7. Share Feedback & Opinion Tile
+                    // 7. Feedback & Bug Report (Wiredash Visual & Quick Opinions)
                     GestureDetector(
                       onTap: () {
                         HapticFeedback.lightImpact();
@@ -1914,7 +1915,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                                     child: const Icon(
                                       LucideIcons.messageSquareHeart,
                                       size: 18,
-                                      color: Color(0xFFEC4899),
+                                      color: Color(0xFF8B5CF6),
                                     ),
                                   ),
                                   const SizedBox(width: 12),
@@ -1923,7 +1924,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                                       crossAxisAlignment: CrossAxisAlignment.start,
                                       children: [
                                         Text(
-                                          "Feedback & Opinion",
+                                          "Feedback & Bug Report",
                                           style: TextStyle(
                                             fontSize: 14.5,
                                             fontWeight: FontWeight.w700,
@@ -1933,7 +1934,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                                           overflow: TextOverflow.ellipsis,
                                         ),
                                         Text(
-                                          "Share ideas, report bugs or give a review",
+                                          "Draw on screen, report issues or review",
                                           style: TextStyle(
                                             fontSize: 11.5,
                                             color: AppColors.textSecondary,

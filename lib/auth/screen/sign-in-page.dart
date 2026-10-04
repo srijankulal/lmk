@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:lmk/auth/services/google_auth.dart';
+import 'package:lmk/components/app_loader.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 
@@ -243,8 +244,8 @@ class _SignInPageState extends State<SignInPage>
                           if (_isLoading)
                             const Padding(
                               padding: EdgeInsets.all(16.0),
-                              child: CircularProgressIndicator(
-                                color: AppColors.primary,
+                              child: AppLoader(
+                                size: 26,
                               ),
                             )
                           else ...[
