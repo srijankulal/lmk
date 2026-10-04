@@ -11,30 +11,51 @@ import 'package:lmk/services/sync_service.dart';
 
 class AuthMethods {
   final FirebaseAuth auth = FirebaseAuth.instance;
+  static const String serverClientId =
+      '640860070869-2mfc4kpoebpstf39834f4s7qr4ltgmd1.apps.googleusercontent.com';
   static final GoogleSignIn _googleSignIn = GoogleSignIn.instance;
   static bool isInitialize = false;
+
   static Future<void> initSignIn() async {
     if (!isInitialize) {
       await _googleSignIn.initialize(
-        serverClientId:
-            '640860070869-2mfc4kpoebpstf39834f4s7qr4ltgmd1.apps.googleusercontent.com',
+        serverClientId: serverClientId,
       );
+      isInitialize = true;
     }
-    isInitialize = true;
   }
 
   Future<UserCredential?> signInWithGoogle(BuildContext context) async {
     try {
       final googleSignIn = GoogleSignIn.instance;
 
-      // Must initialize (v7.x)
-      await googleSignIn.initialize();
+      // Ensure v7.x initializes with Web client ID for Firebase Auth
+      await googleSignIn.initialize(
+        serverClientId: serverClientId,
+      );
 
       // Authenticate / sign in
-      final GoogleSignInAccount? googleUser = await googleSignIn.authenticate();
-      if (googleUser == null) {
-        // user cancelled sign in
-        return null;
+      late final GoogleSignInAccount googleUser;
+      try {
+        googleUser = await googleSignIn.authenticate();
+      } on GoogleSignInException catch (e) {
+        if (e.code == GoogleSignInExceptionCode.canceled &&
+            (e.description?.contains('reauth') ?? false)) {
+          debugPrint("Reauth error detected: $e. Clearing session and retrying...");
+          try {
+            await googleSignIn.signOut();
+          } catch (_) {}
+          try {
+            googleUser = await googleSignIn.authenticate();
+          } on GoogleSignInException catch (_) {
+            return null;
+          }
+        } else if (e.code == GoogleSignInExceptionCode.canceled) {
+          debugPrint("User cancelled Google sign in");
+          return null;
+        } else {
+          rethrow;
+        }
       }
 
       // Get idToken
