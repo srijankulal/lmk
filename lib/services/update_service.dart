@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'package:dio/dio.dart';
 import 'package:flutter/foundation.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -66,8 +67,25 @@ class UpdateService {
   UpdateService._();
   static final UpdateService instance = UpdateService._();
 
-  static const String currentVersion = '0.1.1-alpha';
-  static const int currentBuildNumber = 2;
+  static String _version = '0.1.1-alpha';
+  static int _buildNumber = 2;
+
+  static String get currentVersion => _version;
+  static int get currentBuildNumber => _buildNumber;
+
+  /// Loads the actual runtime package version from platform
+  Future<void> init() async {
+    try {
+      final info = await PackageInfo.fromPlatform();
+      if (info.version.isNotEmpty) {
+        _version = info.version;
+        _buildNumber = int.tryParse(info.buildNumber) ?? _buildNumber;
+        debugPrint('UpdateService initialized with app version: $_version (+$_buildNumber)');
+      }
+    } catch (e) {
+      debugPrint('Failed to load package info: $e');
+    }
+  }
   static const String githubRepo = 'srijankulal/lmk';
   static const String _dismissedKey = 'lmk_dismissed_update_version';
   static const String _dismissedTimeKey = 'lmk_dismissed_update_time';

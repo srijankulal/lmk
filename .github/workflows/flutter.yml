@@ -43,16 +43,52 @@ jobs:
       - name: Run widget & unit tests
         run: flutter test
 
-      - name: Extract version from pubspec.yaml
+      - name: Calculate next release version
         id: version
         run: |
-          VERSION=$(grep '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([^+]+).*/\1/' | tr -d ' "\r')
-          echo "tag=v$VERSION" >> $GITHUB_OUTPUT
-          echo "version=$VERSION" >> $GITHUB_OUTPUT
-          echo "Resolved version: $VERSION (tag: v$VERSION)"
+          git fetch --tags --force || true
+
+          if [[ "${{ github.ref }}" == refs/tags/v* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            VERSION="${TAG#v}"
+            BUILD_NUMBER=$(echo "$VERSION" | sed -E "s/^[0-9]+\.[0-9]+\.([0-9]+).*/\1/")
+            [ -z "$BUILD_NUMBER" ] && BUILD_NUMBER="1"
+          else
+            # Extract major.minor prefix from pubspec.yaml (e.g. 0.1)
+            BASE_PREFIX=$(grep '^version:' pubspec.yaml | sed -E 's/version:[[:space:]]*([0-9]+\.[0-9]+)\..*/\1/' | tr -d ' "\r')
+            [ -z "$BASE_PREFIX" ] && BASE_PREFIX="0.1"
+
+            # Find latest tag for this prefix (e.g. v0.1.1-alpha)
+            LATEST_TAG=$(git tag -l "v${BASE_PREFIX}.*" | sort -V | tail -n 1)
+            echo "Latest existing tag: $LATEST_TAG"
+
+            if [ -z "$LATEST_TAG" ]; then
+              NEXT_PATCH=1
+            else
+              CURRENT_PATCH=$(echo "$LATEST_TAG" | sed -E "s/^v[0-9]+\.[0-9]+\.([0-9]+).*/\1/")
+              if [ -z "$CURRENT_PATCH" ]; then
+                NEXT_PATCH=1
+              else
+                NEXT_PATCH=$((CURRENT_PATCH + 1))
+              fi
+            fi
+
+            VERSION="${BASE_PREFIX}.${NEXT_PATCH}-alpha"
+            TAG="v${VERSION}"
+            BUILD_NUMBER=${NEXT_PATCH}
+          fi
+
+          echo "tag=${TAG}" >> $GITHUB_OUTPUT
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
+          echo "==> Generated Release Version: ${VERSION} (Tag: ${TAG}, Build Number: ${BUILD_NUMBER}) <=="
 
       - name: Build Android Release APK
-        run: flutter build apk --release --android-skip-build-dependency-validation
+        run: |
+          flutter build apk --release \
+            --build-name=${{ steps.version.outputs.version }} \
+            --build-number=${{ steps.version.outputs.build_number }} \
+            --android-skip-build-dependency-validation
 
       - name: Prepare named APK asset
         run: |

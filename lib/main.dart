@@ -12,6 +12,7 @@ import 'package:lmk/presentation/setReminder.dart';
 import 'package:lmk/presentation/start_screen.dart';
 import 'package:lmk/components/colours/colours.dart';
 import 'package:lmk/services/settings_service.dart';
+import 'package:lmk/services/update_service.dart';
 import 'package:shadcn_ui/shadcn_ui.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:wiredash/wiredash.dart';
@@ -58,6 +59,7 @@ void main() async {
   await Firebase.initializeApp();
   tz.initializeTimeZones();
   await AppSettings.instance.init();
+  await UpdateService.instance.init();
   SharedPreferences prefs = await SharedPreferences.getInstance();
   bool seenOnboarding = prefs.getBool('seenOnboarding') ?? false;
 

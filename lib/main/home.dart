@@ -1796,8 +1796,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           UpdateDialog.show(context, release, isManual: true);
                         } else {
                           ShadToaster.of(context).show(
-                            const ShadToast(
-                              duration: Duration(seconds: 2),
+                            ShadToast(
+                              duration: const Duration(seconds: 2),
                               backgroundColor: AppColors.success,
                               title: Text(
                                 'You\'re Up-to-Date! ✨',
@@ -2069,6 +2069,23 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ),
                         ),
                       ],
+                    ),
+                    const SizedBox(height: 4),
+                    GestureDetector(
+                      onTap: () {
+                        HapticFeedback.lightImpact();
+                        UpdateService.instance.launchDownload('https://github.com/TheJonathanC');
+                      },
+                      child: Text(
+                        'Logo by @TheJonathanC',
+                        style: TextStyle(
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w500,
+                          color: AppColors.textTertiary.withAlpha(200),
+                          decoration: TextDecoration.underline,
+                          decorationColor: AppColors.textTertiary.withAlpha(120),
+                        ),
+                      ),
                     ),
                           ],
                         ),
