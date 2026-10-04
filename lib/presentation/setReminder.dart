@@ -1,7 +1,9 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:ui';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:internet_connection_checker_plus/internet_connection_checker_plus.dart';
 import 'package:lmk/components/colours/colours.dart';
@@ -27,6 +29,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
   final _datePopoverController = ShadPopoverController();
   TimeOfDay? _selectedTime;
   DocData? _args;
+  bool _isSubmitting = false;
 
   @override
   void didChangeDependencies() {
@@ -268,9 +271,18 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
                               ),
                               const Spacer(),
                               ShadButton(
-                                child: const Text('Set reminder'),
                                 backgroundColor: AppColors.primary,
-                                onPressed: () => _onSubmit(args),
+                                onPressed: _isSubmitting ? null : () => _onSubmit(args),
+                                child: _isSubmitting
+                                    ? const SizedBox(
+                                        width: 18,
+                                        height: 18,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                        ),
+                                      )
+                                    : const Text('Set reminder'),
                               ),
                             ],
                           ),
@@ -338,6 +350,9 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
       return;
     }
 
+    setState(() => _isSubmitting = true);
+    HapticFeedback.mediumImpact();
+
     final notificationId = args.documentType.hashCode.abs();
 
     final settings = AppSettings.instance;
@@ -361,31 +376,33 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
     );
     final notificationDetails = NotificationDetails(android: androidDetails);
 
-    await flutterLocalNotificationsPlugin.zonedSchedule(
-      notificationId,
-      'Reminder for ${args.documentType}',
-      'This is your reminder!',
-      tz.TZDateTime.from(
-        DateTime(
-          selectedDate.year,
-          selectedDate.month,
-          selectedDate.day,
-          selectedTime.hour,
-          selectedTime.minute,
+    unawaited(
+      flutterLocalNotificationsPlugin.zonedSchedule(
+        notificationId,
+        'Reminder for ${args.documentType}',
+        'This is your reminder!',
+        tz.TZDateTime.from(
+          DateTime(
+            selectedDate.year,
+            selectedDate.month,
+            selectedDate.day,
+            selectedTime.hour,
+            selectedTime.minute,
+          ),
+          tz.local,
         ),
-        tz.local,
+        notificationDetails,
+        payload: jsonEncode({
+          'index': notificationId,
+          'title': 'Reminder for ${args.documentType}',
+          'documentType': args.documentType,
+          'expiryDate': (args.expiryDate ?? selectedDate).toIso8601String(),
+          'reminderDate': selectedDate.toIso8601String(),
+          'time':
+              '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
+        }),
+        androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
       ),
-      notificationDetails,
-      payload: jsonEncode({
-        'index': notificationId,
-        'title': 'Reminder for ${args.documentType}',
-        'documentType': args.documentType,
-        'expiryDate': (args.expiryDate ?? selectedDate).toIso8601String(),
-        'reminderDate': selectedDate.toIso8601String(),
-        'time':
-            '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
-      }),
-      androidScheduleMode: AndroidScheduleMode.exactAllowWhileIdle,
     );
 
     if (!mounted) return;
@@ -407,9 +424,58 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
         expiryDate: args.expiryDate ?? selectedDate,
         issuedDate: args.issueDate ?? DateTime.now(),
         reminderDate: args.reminderDate ?? selectedDate,
+        isEnabled: true,
       );
+      // 1. Immediately persist to local database for 0ms lag
       await ReminderLocalDataSource().addReminder(repoLocal);
 
+      // 2. Instantly pop back to Home and show success feedback
+      if (mounted) {
+        ShadToaster.of(context).show(
+          const ShadToast(
+            title: Text('Reminder set successfully'),
+            backgroundColor: Colors.green,
+            duration: Duration(seconds: 2),
+          ),
+        );
+        Navigator.of(context).popUntil(
+          (route) => route.settings.name == '/home' || route.isFirst,
+        );
+      }
+
+      // 3. Asynchronously sync to cloud backend in background (never blocks UI)
+      unawaited(
+        _syncReminderInBackground(
+          repoLocal: repoLocal,
+          user: user,
+          notificationId: notificationId,
+          args: args,
+          selectedDate: selectedDate,
+          selectedTime: selectedTime,
+        ),
+      );
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isSubmitting = false);
+        ShadToaster.of(context).show(
+          ShadToast.destructive(
+            title: const Text('Failed to save reminder'),
+            description: Text('$e'),
+          ),
+        );
+      }
+    }
+  }
+
+  Future<void> _syncReminderInBackground({
+    required ReminderLocal repoLocal,
+    required User? user,
+    required int notificationId,
+    required DocData args,
+    required DateTime selectedDate,
+    required TimeOfDay selectedTime,
+  }) async {
+    try {
       final hasInternet = await InternetConnection().hasInternetAccess;
       if (hasInternet && user != null) {
         final token = await user.getIdToken();
@@ -417,7 +483,7 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
           final repo = CreateReminderRepository();
           await repo.createReminder(
             token: token,
-            uid: uid,
+            uid: repoLocal.userId,
             title: 'Reminder for ${args.documentType}',
             time:
                 '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
@@ -438,41 +504,8 @@ class _SetReminderScreenState extends State<SetReminderScreen> {
           );
         }
       }
-      // await repo.createReminder(
-      //   token: token,
-      //   uid: uid,
-      //   title: 'Reminder for ${args.documentType}',
-      //   time:
-      //       '${selectedTime.hour.toString().padLeft(2, '0')}:${selectedTime.minute.toString().padLeft(2, '0')}',
-      //   expiryDate: args.expiryDate as DateTime,
-      //   setDate: DateTime(
-      //     selectedDate.year,
-      //     selectedDate.month,
-      //     selectedDate.day,
-      //     selectedTime.hour,
-      //     selectedTime.minute,
-      //   ),
-      //   isEnabled: true,
-      //   index: notificationId,
-      //   issuedDate: args.issueDate ?? DateTime.now(),
-      // );
-
-      ShadToaster.of(context).show(
-        ShadToast(
-          title: const Text('Reminder set successfully'),
-          backgroundColor: Colors.green,
-          duration: const Duration(seconds: 2),
-        ),
-      );
-      Navigator.pushNamed(context, '/home');
-    } catch (e) {
-      print('Error saving reminder: $e');
-      ShadToaster.of(context).show(
-        ShadToast.destructive(
-          title: const Text('Failed to save reminder'),
-          description: Text('$e'),
-        ),
-      );
+    } catch (_) {
+      // Background sync fail is safe: local copy exists and SyncService will retry.
     }
   }
 

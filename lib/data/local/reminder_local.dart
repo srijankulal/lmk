@@ -49,4 +49,10 @@ class ReminderLocalDataSource {
     final isar = await _isarService.db;
     return await isar.reminderLocals.filter().syncedEqualTo(false).findAll();
   }
+
+  // Watch for any changes to reminders in real-time
+  Stream<void> watchReminders() async* {
+    final isar = await _isarService.db;
+    yield* isar.reminderLocals.watchLazy();
+  }
 }

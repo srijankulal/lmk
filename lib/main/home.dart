@@ -35,6 +35,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
   List<Reminder> reminders = [];
   String? token;
   StreamSubscription<InternetStatus>? _connectionSubscription;
+  StreamSubscription<void>? _remindersSubscription;
   bool _isOnline = true;
   String name = 'User';
   String photoUrl =
@@ -97,6 +98,12 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     _controller.forward();
     _initNotifications();
     _load();
+    // Real-time reactive stream: immediately updates UI on any local DB write
+    _remindersSubscription = ReminderLocalDataSource().watchReminders().listen((_) {
+      if (mounted) {
+        _loadReminders();
+      }
+    });
     //start listening to connectivity changes
     _subscribeToConnection();
     // Request full-screen intent permission after the first frame so the
@@ -236,6 +243,7 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
     _searchController.dispose();
     _controller.dispose();
     _connectionSubscription?.cancel();
+    _remindersSubscription?.cancel();
     super.dispose();
   }
 
@@ -971,6 +979,14 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
                           ? _buildSkeletonLoader(isDark)
                           : BuildCard(
                               reminders: filtered,
+                              onUpdate: (Reminder updated) {
+                                setState(() {
+                                  final idx = reminders.indexWhere((r) => r.id == updated.id);
+                                  if (idx != -1) {
+                                    reminders[idx] = updated;
+                                  }
+                                });
+                              },
                               onDelete: (int id) {
                                 setState(() {
                                   reminders.removeWhere((r) => r.id == id);
@@ -1029,7 +1045,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
               }
               if (!mounted) return;
               DocData docData = DocData();
-              nav.pushNamed('/docForm', arguments: docData);
+              await nav.pushNamed('/docForm', arguments: docData);
+              if (mounted) _loadReminders();
             },
           ),
         ],
@@ -2424,7 +2441,8 @@ class _HomeState extends State<Home> with SingleTickerProviderStateMixin {
         buildErrorToast(context);
         return;
       }
-      Navigator.pushNamed(context, '/docForm', arguments: docData);
+      await Navigator.pushNamed(context, '/docForm', arguments: docData);
+      if (mounted) _loadReminders();
     } catch (e) {
       print("Error picking image: $e");
       if (!mounted) return;

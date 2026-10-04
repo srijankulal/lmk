@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:math' as math;
 import 'dart:ui';
@@ -77,8 +78,14 @@ enum _DeckMode { stage, stream }
 class BuildCard extends StatefulWidget {
   final List<Reminder> reminders;
   final Function(int id)? onDelete;
+  final Function(Reminder updated)? onUpdate;
 
-  const BuildCard({super.key, required this.reminders, this.onDelete});
+  const BuildCard({
+    super.key,
+    required this.reminders,
+    this.onDelete,
+    this.onUpdate,
+  });
 
   @override
   State<BuildCard> createState() => _BuildCardState();
@@ -228,6 +235,7 @@ class _BuildCardState extends State<BuildCard> {
                                   index: index,
                                   isHero: true,
                                   onDelete: widget.onDelete,
+                                  onUpdate: widget.onUpdate,
                                 ),
                               ),
                             );
@@ -330,6 +338,7 @@ class _BuildCardState extends State<BuildCard> {
                               index: index,
                               isHero: false,
                               onDelete: widget.onDelete,
+                              onUpdate: widget.onUpdate,
                             ),
                           ),
                         );
@@ -512,6 +521,7 @@ class _ModernDocumentCard extends StatefulWidget {
   final int index;
   final bool isHero;
   final Function(int id)? onDelete;
+  final Function(Reminder updated)? onUpdate;
 
   const _ModernDocumentCard({
     super.key,
@@ -519,6 +529,7 @@ class _ModernDocumentCard extends StatefulWidget {
     required this.index,
     required this.isHero,
     this.onDelete,
+    this.onUpdate,
   });
 
   @override
@@ -542,7 +553,11 @@ class _ModernDocumentCardState extends State<_ModernDocumentCard> {
   @override
   void didUpdateWidget(covariant _ModernDocumentCard oldWidget) {
     super.didUpdateWidget(oldWidget);
-    if (oldWidget.reminder != widget.reminder) {
+    if (oldWidget.reminder.isEnabled != widget.reminder.isEnabled ||
+        oldWidget.reminder.title != widget.reminder.title ||
+        oldWidget.reminder.time != widget.reminder.time ||
+        oldWidget.reminder.reminderDate != widget.reminder.reminderDate ||
+        oldWidget.reminder.expiry_date != widget.reminder.expiry_date) {
       _syncState();
     }
   }
@@ -1044,18 +1059,27 @@ class _ModernDocumentCardState extends State<_ModernDocumentCard> {
       reminderDate: _reminderDate,
     );
 
+    // Optimistic in-memory update for 0ms UI response
+    widget.onUpdate?.call(updated);
+
     if (newEnabled) {
-      await _scheduleAlarm(updated);
+      unawaited(_scheduleAlarm(updated));
     } else {
-      await flutterLocalNotificationsPlugin.cancel(widget.reminder.index);
+      unawaited(flutterLocalNotificationsPlugin.cancel(widget.reminder.index));
     }
-    await _updateDatabase(updated);
+    unawaited(_updateDatabase(updated));
   }
 
   void _openEditDialog(BuildContext context) {
     _showEditModal(
       context: context,
-      reminder: widget.reminder,
+      reminder: widget.reminder.copyWith(
+        title: _title,
+        time: _time,
+        expiry_date: _expiryDate,
+        reminderDate: _reminderDate,
+        isEnabled: _isEnabled,
+      ),
       currentTitle: _title,
       currentTime: _time,
       currentExpiryDate: _expiryDate,
@@ -1066,6 +1090,13 @@ class _ModernDocumentCardState extends State<_ModernDocumentCard> {
           _time = newTime;
           _reminderDate = newDate;
         });
+        final updated = widget.reminder.copyWith(
+          title: newTitle,
+          time: newTime,
+          reminderDate: newDate,
+          isEnabled: _isEnabled,
+        );
+        widget.onUpdate?.call(updated);
       },
       onDelete: widget.onDelete,
     );
@@ -1485,27 +1516,14 @@ class _SwipeDismissWrapper extends StatelessWidget {
   }
 
   Future<void> _performDelete(BuildContext context) async {
-    final hasInternet = await InternetConnection().hasInternetAccess;
-    final isar = await IsarService().db;
-
-    if (hasInternet) {
-      try {
-        await DeleteReminder().deleteReminder(reminder.index.toString());
-        await ReminderLocalDataSource().deleteReminder(reminder.id);
-      } catch (_) {}
-    } else {
-      await isar.writeTxn(() async {
-        await isar.pendingDeletions.put(
-          PendingDeletion()
-            ..remoteIndex = reminder.index.toString()
-            ..deletedAt = DateTime.now(),
-        );
-        await isar.reminderLocals.delete(reminder.id);
-      });
-    }
-
-    await flutterLocalNotificationsPlugin.cancel(reminder.index);
+    unawaited(flutterLocalNotificationsPlugin.cancel(reminder.index));
     onDelete?.call(reminder.id);
+
+    try {
+      await ReminderLocalDataSource().deleteReminder(reminder.id);
+    } catch (_) {}
+
+    unawaited(_syncRemoteDelete(reminder));
   }
 }
 
@@ -1600,23 +1618,56 @@ Future<void> _updateDatabase(Reminder updated) async {
     await ReminderLocalDataSource().updateReminder(existing);
   }
 
-  final hasInternet = await InternetConnection().hasInternetAccess;
-  if (hasInternet) {
-    try {
-      await UpdateReminder().updateReminder(
-        index: updated.index,
-        title: updated.title,
-        time:
-            '${updated.time.hour.toString().padLeft(2, '0')}:${updated.time.minute.toString().padLeft(2, '0')}',
-        setDate: updated.reminderDate ?? updated.expiry_date,
-        isEnabled: updated.isEnabled,
+  unawaited(_syncRemoteUpdate(updated, existing));
+}
+
+Future<void> _syncRemoteUpdate(Reminder updated, dynamic existing) async {
+  try {
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (hasInternet) {
+      try {
+        await UpdateReminder().updateReminder(
+          index: updated.index,
+          title: updated.title,
+          time:
+              '${updated.time.hour.toString().padLeft(2, '0')}:${updated.time.minute.toString().padLeft(2, '0')}',
+          setDate: updated.reminderDate ?? updated.expiry_date,
+          isEnabled: updated.isEnabled,
+        );
+        if (existing != null) {
+          existing.synced = true;
+          await ReminderLocalDataSource().updateReminder(existing);
+        }
+      } catch (_) {}
+    }
+  } catch (_) {}
+}
+
+Future<void> _syncRemoteDelete(Reminder reminder) async {
+  try {
+    final hasInternet = await InternetConnection().hasInternetAccess;
+    if (hasInternet) {
+      try {
+        await DeleteReminder().deleteReminder(reminder.index.toString());
+        return;
+      } catch (_) {}
+    }
+    final isar = await IsarService().db;
+    await isar.writeTxn(() async {
+      await isar.pendingDeletions.put(
+        PendingDeletion()
+          ..remoteIndex = reminder.index.toString()
+          ..deletedAt = DateTime.now(),
       );
-      if (existing != null) {
-        existing.synced = true;
-        await ReminderLocalDataSource().updateReminder(existing);
-      }
-    } catch (_) {}
-  }
+    });
+  } catch (_) {}
+}
+
+Future<void> _performBackgroundDelete(Reminder reminder) async {
+  try {
+    await ReminderLocalDataSource().deleteReminder(reminder.id);
+  } catch (_) {}
+  await _syncRemoteDelete(reminder);
 }
 
 // ---------------------------------------------------------------------------
@@ -1989,39 +2040,18 @@ void _showDeleteModal({
                         child: ShadButton(
                           backgroundColor: const Color(0xFFDC2626),
                           child: const Text('Delete'),
-                          onPressed: () async {
-                            final hasInternet = await InternetConnection().hasInternetAccess;
-                            final isar = await IsarService().db;
-
-                            if (hasInternet) {
-                              try {
-                                await DeleteReminder().deleteReminder(reminder.index.toString());
-                                await ReminderLocalDataSource().deleteReminder(reminder.id);
-                              } catch (_) {}
-                            } else {
-                              await isar.writeTxn(() async {
-                                await isar.pendingDeletions.put(
-                                  PendingDeletion()
-                                    ..remoteIndex = reminder.index.toString()
-                                    ..deletedAt = DateTime.now(),
-                                );
-                                await isar.reminderLocals.delete(reminder.id);
-                              });
-                            }
-
-                            await flutterLocalNotificationsPlugin.cancel(reminder.index);
+                          onPressed: () {
+                            unawaited(flutterLocalNotificationsPlugin.cancel(reminder.index));
                             onDelete?.call(reminder.id);
                             if (context.mounted) {
                               Navigator.of(context).pop(true);
                               ShadToaster.of(context).show(
-                                ShadToast(
-                                  duration: const Duration(milliseconds: 1500),
+                                const ShadToast(
+                                  duration: Duration(milliseconds: 1500),
                                   backgroundColor: AppColors.success,
                                   title: Text(
-                                    hasInternet
-                                        ? 'Reminder Deleted'
-                                        : 'Deleted (Saved for Sync)',
-                                    style: const TextStyle(
+                                    'Reminder Deleted',
+                                    style: TextStyle(
                                       color: Colors.white,
                                       fontWeight: FontWeight.bold,
                                     ),
@@ -2029,6 +2059,7 @@ void _showDeleteModal({
                                 ),
                               );
                             }
+                            unawaited(_performBackgroundDelete(reminder));
                           },
                         ),
                       ),
