@@ -83,7 +83,18 @@ jobs:
           echo "build_number=${BUILD_NUMBER}" >> $GITHUB_OUTPUT
           echo "==> Generated Release Version: ${VERSION} (Tag: ${TAG}, Build Number: ${BUILD_NUMBER}) <=="
 
+      - name: Decode Release Keystore from Secret
+        if: env.KEYSTORE_BASE64 != ''
+        run: |
+          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+        env:
+          KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+
       - name: Build Android Release APK
+        env:
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.KEY_PASSWORD }}
         run: |
           flutter build apk --release \
             --build-name=${{ steps.version.outputs.version }} \
