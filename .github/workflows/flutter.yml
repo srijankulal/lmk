@@ -84,11 +84,14 @@ jobs:
           echo "==> Generated Release Version: ${VERSION} (Tag: ${TAG}, Build Number: ${BUILD_NUMBER}) <=="
 
       - name: Decode Release Keystore from Secret
-        if: env.KEYSTORE_BASE64 != ''
+        if: ${{ secrets.KEYSTORE_BASE64 != '' }}
         run: |
-          echo "$KEYSTORE_BASE64" | base64 --decode > android/app/release.keystore
+          echo "$KEYSTORE_BASE64" | tr -d '\r' | base64 --decode > android/app/release.keystore
+          echo "Release keystore decoded. Checking keystore contents:"
+          keytool -list -keystore android/app/release.keystore -storepass "$KEYSTORE_PASSWORD" || true
         env:
           KEYSTORE_BASE64: ${{ secrets.KEYSTORE_BASE64 }}
+          KEYSTORE_PASSWORD: ${{ secrets.KEYSTORE_PASSWORD }}
 
       - name: Build Android Release APK
         env:
